@@ -10,8 +10,8 @@ proyears <- 30
 n_g <- 2
 
 # Load exploitation rate model - Sarita (with Robertson CWT traditionals)
-ERM_Sarita <- readRDS("CM/Sarita_RBT_CM_05.20.25.rds")
-report_RBT <- salmonMSE:::get_report(ERM_Sarita)
+ERM_Sarita <- readRDS("CM/Sarita_RBT_CM_09.08.25.rds")
+report_RBT <- salmonMSE:::get_report(ERM_Sarita) # Removes warmup and thinned samples
 
 # Take maturity average from the 6 most recent brood years (2013-2018)
 matt_dev <- readRDS("CM/Sarita_maturity.rds")
@@ -23,10 +23,6 @@ matt_avg <- sapply(matt_dev, function(x) {
 
 set.seed(24)
 sim_samp <- sample(seq(1, length(report_RBT)), nsim)
-
-# Load exploitation rate model - Quinsam CWT (fed fry + traditionals)
-ERM_Quinsam <- readRDS("CM/Sarita_RBT_CM_05.20.25.rds")
-report_Q <- salmonMSE:::get_report(ERM_Quinsam)
 
 ### Natural mortality - NOS ----
 Mjuv_NOS <- array(0, c(nsim, maxage, nyears + proyears, n_g))
@@ -132,6 +128,8 @@ sarita_rel %>%
 
 stray <- c(0, 0.11, 0.16, 0.69, 0.04) * 100 # Proportions based on Sarita CWT escapement of traditionals in 2018
 h2 <- EnvStats::rnormTrunc(nsim, 0.25, 0.15, min = 0, max = 0.5)
+
+#### Note brood rule and in-river harvest rule are defined in script 4
 Hatchery <- new(
   "Hatchery",
   n_r = n_r,
@@ -142,15 +140,15 @@ Hatchery <- new(
   s_egg_subyearling = 1,
   Mjuv_HOS = Mjuv_HOS,
   p_mature_HOS = p_mature_RS,
-  stray_external = matrix(c(rep(0, 5), stray), maxage, 2),
+  #stray_external = matrix(c(rep(0, 5), stray), maxage, 2), # Turn off strays for now
   gamma = 0.8,  # HSRG standard, Sarita AHA inputs
   m = 1,
-  pmax_esc = 1,
-  pmax_NOB = 0.50,     # SEP guideline, suggested by Lian
-  ptarget_NOB = 0.50,  # Hatchery data, Sarita AHA inputs, will evaluate a grid of 50, 75, 100 percent
-  phatchery = 0.5,     # Stand-in for ESSR fishery with HOS exploitation rates of 0.5, 0.75, or 1
-  hatchery_MSF = TRUE,
-  premove_HOS = 0,
+  #f_brood = f_brood,  # Function defined in script 4
+  pmax_esc = 0.33,
+  pmax_NOB = 0.5,      # SEP guideline, suggested by Lian
+  ptarget_NOB = 0.50,  # Hatchery data, Sarita AHA inputs, will evaluate a grid of 50, 75, 100 percent (see f_brood function in script 4)
+  phatchery = NA,
+  premove_HOS = 0,   # Stand-in for in-river fishery with HOS exploitation rates of 0.5, 0.7, or 0.99 (see f_catch function in script 4)
   fec_brood = fec, #rep(3625, maxage) is used from Hatchery data, Sarita AHA input
   fitness_type = c("Ford", "none"),
   theta = c(100, 80),
@@ -316,7 +314,8 @@ SOM <- new("SOM",
            Historical = Historical)
 saveRDS(SOM, "SOM/SOM_base.rds")
 
-# Scenario 4 - high fry/spawner
+
+# Scenario with high fry/spawner
 env_series_high <- rep(80, proyears)
 sim_surv2 <- get_eggfry_surv(env_series_high)
 fpe2 <- reshape2::acast(sim_surv2, list("Simulation", "year"), value.var = "fpe")
