@@ -379,9 +379,28 @@ SOM3@Hatchery@fec_brood <- fec_decline
 saveRDS(SOM3, "SOM/SOM_declinematfec.rds")
 
 
-# Make figure of maturity
 if (FALSE) {
 
+  #### Base maturity and vulnerability ----
+  png("figures/SMSE/maturity_vul.png", height = 6, width = 3, units = "in", res = 400)
+  par(mfrow = c(3, 1), mar = c(5, 4, 1, 1))
+
+  salmonMSE:::plot_Mjuv_RS(SOM@Hatchery@p_mature_HOS[, , 1, ],
+                           RS_names = c("Fed Fry", "Traditionals"), ylab = "Proportion mature")
+
+  salmonMSE:::plot_SOM(SOM@Harvest, "vulPT",
+                       type = "age", nsim = SOM@nsim, maxage =  SOM@Bio@maxage,
+                       nyears = SOM@nyears, proyears = SOM@proyears,
+                       ylab = "Juvenile fishery vulnerability")
+
+  salmonMSE:::plot_SOM(SOM@Harvest, "vulT",
+                       type = "age", nsim = SOM@nsim, maxage =  SOM@Bio@maxage,
+                       nyears = SOM@nyears, proyears = SOM@proyears,
+                       ylab = "Terminal fishery vulnerability")
+
+  dev.off()
+
+  #### Time-varying maturity and fecundity ----
   matt_new <- lapply(1:length(sim_samp), function(x) {
     out <- report_RBT[[sim_samp[x]]]["matt"]
     matt_proj <- SOM@Hatchery@p_mature_HOS[x, , SOM3@nyears + seq(1, SOM3@proyears), 2] %>%
@@ -419,5 +438,9 @@ if (FALSE) {
     geom_point() +
     labs(y = "Fecundity", colour = "Age")
   ggsave("figures/SMSE/Sarita_decline_fecundity.png", g, height = 3, width = 5)
+
+
+
+
 
 }

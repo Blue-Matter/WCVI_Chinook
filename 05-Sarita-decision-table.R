@@ -2,257 +2,53 @@
 
 library(salmonMSE)
 
-gr <- local({
+# Identify scenarios and management options ----
+gr <- expand.grid(
+  ER = c(0.5, 0.75, 1),
+  pNOB_target = c(0.5, 0.75, 1),
+  ocean_ER_scalar = 1,
+  surv = c("avg", "high"),
+  fec = "constant"
+) %>%
+  mutate(Scenario = ifelse(surv == "avg", "Base (high ocean ER)", "High freshwater survival"))
 
-  gr <- expand.grid(
-    ESSR_ER = c(0.5, 0.75, 1),
-    pNOB_target = c(0.5, 0.75, 1)
-  ) %>%
-    mutate(scenario = paste0("ER = ", ESSR_ER, ", pNOB = ", pNOB_target), ref = "grid")
-
-  g2 <- data.frame(
-    ESSR_ER = 0.5,
-    pNOB_target = 0.5,
-    scenario = c("90% Traditionals from (1)", "90% Fed Fry from (1)", "High Surv. from (1)", "HiSurvNoHarvHatch", "NoHarv.NoHatch.",
-                 "Dens.Dependence from (1)", "Dec.Maturity from (1)"),
-    ref = "additional"
+gr <- rbind(
+  gr,
+  gr %>% filter(surv == "avg") %>%
+    mutate(ocean_ER_scalar = 0.75) %>%
+    mutate(Scenario = "Lower ocean ER"),
+  gr %>% filter(surv == "avg") %>%
+    mutate(ocean_ER_scalar = 0.75, fec = "decline") %>%
+    mutate(Scenario = "Lower ocean ER, earlier mat., & decline fec.")
+) %>%
+  mutate(
+    Option = paste0("ER = ", ER, ", pNOB = ", pNOB_target),
+    n = 1:n()
   )
-  gr <- rbind(gr, g2) %>%
-    mutate(n = 1:n()) %>%
-    filter(!grepl("NoHarv", scenario)) %>%
-    mutate(scenario = paste0("(", 1:nrow(.), ") ", scenario))
-  #gr[-c(13, 14), ]
-  gr
-})
 
-name <- gr$scenario
 nOM <- nrow(gr)
+
+# Grab all model output ----
+scenario_unique <- unique(gr$Scenario)
 
 SMSE_list <- lapply(gr$n, function(i) {
   SMSE <- readRDS(file.path("SMSE", paste0("Sarita", i, ".rds")))
   return(SMSE)
 })
 
-
-#### Plot maturity and vulnerability ----
-png("figures/SMSE/maturity_vul.png", height = 6, width = 3, units = "in", res = 400)
-par(mfrow = c(3, 1), mar = c(5, 4, 1, 1))
-
-SOM <- SMSE_list[[1]]@Misc$SOM
-salmonMSE:::plot_Mjuv_RS(SOM@Hatchery[[1]]@p_mature_HOS[, , 1, ],
-                         RS_names = c("Fed Fry", "Traditionals"), ylab = "Proportion mature")
-
-salmonMSE:::plot_SOM(SOM@Harvest[[1]], "vulPT",
-                     type = "age", nsim = SOM@nsim, maxage =  SOM@Bio[[1]]@maxage,
-                     nyears = SOM@nyears, proyears = SOM@proyears,
-                     ylab = "Juvenile fishery vulnerability")
-
-salmonMSE:::plot_SOM(SOM@Harvest[[1]], "vulT",
-                     type = "age", nsim = SOM@nsim, maxage =  SOM@Bio[[1]]@maxage,
-                     nyears = SOM@nyears, proyears = SOM@proyears,
-                     ylab = "Terminal fishery vulnerability")
-
-dev.off()
-
-#### Plot time series ----
-.ts_fn <- function(SMSE, name, var) {
-  require(salmonMSE)
-
-  if (var == "Brood") {
-    out <- apply(SMSE@NOB + SMSE@HOB, 3, quantile, c(0.025, 0.5, 0.975))
-  } else if (var == "Egg") {
-    out <- apply(SMSE@Egg_NOS + SMSE@Egg_HOS, 3, quantile, c(0.025, 0.5, 0.975))
-  } else {
-    out <- plot_statevar_ts(SMSE, var, figure = FALSE, quant = TRUE)
-  }
-
-  reshape2::melt(out) %>%
-    rename(Year = Var2) %>%
-    mutate(name = name) %>%
-    reshape2::dcast(Year + name ~ Var1)
-}
-
-ts_fn <- function(SMSE_list, name, var) {
-  d <- Map(.ts_fn, SMSE = SMSE_list, name = name, MoreArgs = list(var = var)) %>%
-    bind_rows() %>%
-    filter(!is.na(`50%`), `50%` > 0) %>%
-    mutate(var = .env$var)
-
-  g <- ggplot(d, aes(Year, `50%`, colour = name, fill = name)) +
-    geom_ribbon(aes(ymin = `2.5%`, ymax = `97.5%`), alpha = 0.25, colour = NA, linetype = 2) +
-    geom_line() +
-    labs(x = "Year", y = var, colour = "Scenario", fill = "Scenario")
-  g
-}
-
-
-g1 <- ts_fn(SMSE_list, name, var = "PNI")
-
-g2 <- ts_fn(SMSE_list, name, var = "Total Spawners") +
-  coord_cartesian(ylim = c(0, 2000)) +
-  guides(colour = guide_legend(ncol = 2), fill = guide_legend(ncol = 2))
-
-g3 <- ts_fn(SMSE_list, name, var = "pHOS_effective") +
-  coord_cartesian(ylim = c(0, 1)) +
-  labs(y = expression(pHOS[eff]))
-
-g4 <- ts_fn(SMSE_list, name, var = "p_wild") +
-  coord_cartesian(ylim = c(0, 1)) +
-  labs(y = "pWILD")
-
-g5 <- ts_fn(SMSE_list, name, var = "Brood") +
-  coord_cartesian(ylim = c(300, 600))
-
-g6 <- ts_fn(SMSE_list, name, var = "pNOB") +
-  coord_cartesian(ylim = c(0, 1))
-
-g7 <- ts_fn(SMSE_list, name, var = "Egg") +
-  coord_cartesian(ylim = c(0, 2e6)) +
-  labs(x = "Egg production")
-
-g <- ggpubr::ggarrange(g1, g2, g3, g4, g5, g6, ncol = 2, nrow = 3, common.legend = TRUE, legend = "bottom")
-ggsave("figures/SMSE/ts.png", g, height = 7, width = 6)
-
-#### Plot results by individual scenario -----
-png("figures/SMSE/spawners_prop.png", height = 6, width = 6, units = "in", res = 400)
-par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
-for (i in 1:nOM) {
-  if (gr$ref[i] == "grid") {
-    plot_spawners(SMSE_list[[i]])
-    box()
-    title(name[i])
-  }
-}
-dev.off()
-
-png("figures/SMSE/spawners.png", height = 6, width = 6, units = "in", res = 400)
-par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
-for (i in 1:nOM) {
-  if (gr$ref[i] == "grid") {
-    plot_spawners(SMSE_list[[i]], prop = FALSE, ylim = c(0, 2000))
-    title(name[i])
-  }
-}
-dev.off()
-
-par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
-for (i in 1:nOM) {
-  if (gr$ref[i] == "grid") {
-    plot_escapement(SMSE_list[[i]], ylim = c(0, 1))
-    title(name[i])
-  }
-}
-
-par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
-for (i in 1:nOM) {
-  if (gr$ref[i] == "grid") {
-    plot_fitness(SMSE_list[[i]], ylim = c(0, 1))
-    title(name[i])
-  }
-}
-
-par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
-for (i in 1:nOM) {
-  if (gr$ref[i] == "grid") {
-    plot_fishery(SMSE_list[[i]], ylim = c(0, 5000))
-    title(name[i])
-  }
-}
-
-png("figures/SMSE/RS_HOS.png", height = 6, width = 6, units = "in", res = 400)
-par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
-for (i in 1:nOM) {
-  if (gr$ref[i] == "grid") {
-    plot_RS(SMSE_list[[i]], var = "HOS", type = "abs", name = c("Fed Fry", "Traditionals"), ylim = c(0, 2000))
-    title(name[i])
-  }
-}
-dev.off()
-
-png("figures/SMSE/RS_Rel.png", height = 6, width = 6, units = "in", res = 400)
-par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
-for (i in 1:nOM) {
-  if (gr$ref[i] == "grid") {
-    plot_RS(SMSE_list[[i]], var = "Smolt", type = "abs", name = c("Fed Fry", "Traditionals"),
-            ylab = "Hatchery releases")
-    title(name[i])
-  }
-}
-dev.off()
-
-png("figures/SMSE/RS_Esc.png", height = 6, width = 6, units = "in", res = 400)
-par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
-for (i in 1:nOM) {
-  if (gr$ref[i] == "grid") {
-    plot_RS(SMSE_list[[i]], var = "Esc", type = "abs", name = c("Fed Fry", "Traditionals"),
-            ylab = "HO Escapement",
-            ylim = c(0, 3000))
-    title(name[i])
-  }
-}
-dev.off()
-
-png("figures/SMSE/LHG_NOS.png", height = 6, width = 6, units = "in", res = 400)
-par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
-for (i in 1:nOM) {
-  if (gr$ref[i] == "grid") {
-    plot_LHG(SMSE_list[[i]], var = "NOS", type = "abs", name = c("Early Smalls", "Late Larges"),
-             ylab = "NOS",
-             ylim = c(0, 300))
-    title(name[i])
-  }
-}
-dev.off()
-
-png("figures/SMSE/LHG_Esc.png", height = 6, width = 6, units = "in", res = 400)
-par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
-for (i in 1:nOM) {
-  if (gr$ref[i] == "grid") {
-    plot_LHG(SMSE_list[[i]], var = "Esc", type = "abs", name = c("Early Smalls", "Late Larges"),
-             ylab = "NO Escapement",
-             ylim = c(0, 300))
-    title(name[i])
-  }
-}
-dev.off()
-
-png("figures/SMSE/LHG_Smolt.png", height = 6, width = 6, units = "in", res = 400)
-par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
-for (i in 1:nOM) {
-  if (gr$ref[i] == "grid") {
-    plot_LHG(SMSE_list[[i]], var = "Smolt", type = "abs", name = c("Early Smalls", "Late Larges"),
-             ylab = "NO outmigrating juveniles",
-             ylim = c(0, 3e5))
-    title(name[i])
-  }
-}
-dev.off()
-
-
-#### Performance metrics ----
+# Performance metrics (all simulations at end of projection) ----
 y <- 29
 
 PNI <- sapply(SMSE_list, function(x) x@PNI[, 1, y]) %>%
   reshape2::melt() %>%
-  rename(Simulation = Var1, PNI = value) %>%
-  mutate(scenario = name[Var2])
-#NOS <- sapply(SMSE_list, function(x) rowSums(x@NOS[, 1, , y])) %>%
-#  reshape2::melt() %>%
-#  rename(Simulation = Var1, NOS = value) %>%
-#  mutate(scenario = name[Var2])
-
-#Fitness <- sapply(SMSE_list, function(x) x@fitness[, 1, 1, y]) %>%
-#  reshape2::melt() %>%
-#  rename(Simulation = Var1, Fitness = value) %>%
-#  mutate(scenario = name[Var2])
+  rename(Simulation = Var1, PNI = value, n = Var2)
 
 TS <- sapply(SMSE_list, function(x) {
   TS_a <- x@NOS[, 1, , y] + x@HOS[, 1, , y]
   rowSums(TS_a)
 }) %>%
   reshape2::melt() %>%
-  rename(Simulation = Var1, `Total Spawners` = value) %>%
-  mutate(scenario = name[Var2])
+  rename(Simulation = Var1, `Total Spawners` = value, n = Var2)
 
 MA <- sapply(SMSE_list, function(x) {
   TS_a <- x@NOS[, 1, , y] + x@HOS[, 1, , y]
@@ -260,192 +56,340 @@ MA <- sapply(SMSE_list, function(x) {
   return(MA)
 }) %>%
   reshape2::melt() %>%
-  rename(Simulation = Var1, `Mean age` = value) %>%
-  mutate(scenario = name[Var2])
+  rename(Simulation = Var1, `Mean age` = value, n = Var2)
+
 p_wild <- sapply(SMSE_list, function(x) x@p_wild[, , y]) %>%
   reshape2::melt() %>%
-  rename(Simulation = Var1, pWILD = value) %>%
-  mutate(scenario = name[Var2])
+  rename(Simulation = Var1, pWILD = value, n = Var2)
 
 pHOSeff <- sapply(SMSE_list, function(x) x@pHOS_effective[, , y]) %>%
   reshape2::melt() %>%
-  rename(Simulation = Var1, pHOSeff = value) %>%
-  mutate(scenario = name[Var2])
+  rename(Simulation = Var1, pHOSeff = value, n = Var2)
 
 pNOBeff <- sapply(SMSE_list, function(x) x@pNOB[, , y]) %>%
   reshape2::melt() %>%
-  rename(Simulation = Var1, pNOBeff = value) %>%
-  mutate(scenario = name[Var2])
+  rename(Simulation = Var1, pNOBeff = value, n = Var2)
 
 Brood <- sapply(SMSE_list, function(x) x@NOB[, , y] + x@HOB[, , y]) %>%
   reshape2::melt() %>%
-  rename(Simulation = Var1, Brood = value) %>%
-  mutate(scenario = name[Var2])
+  rename(Simulation = Var1, Brood = value, n = Var2)
 
 Esc <- sapply(SMSE_list, function(x) {
   apply(x@Escapement_NOS[, , , y] + x@Escapement_HOS[, , , y], 1, sum)
 }) %>%
   reshape2::melt() %>%
-  rename(Simulation = Var1, Escapement = value) %>%
-  mutate(scenario = name[Var2])
+  rename(Simulation = Var1, Escapement = value, n = Var2)
 
-K <- sapply(1:length(SMSE_list), function(i) {
-  ER <- gr$ESSR_ER[i]
-  SMSE <- SMSE_list[[i]]
-  Esc_HOS <- apply(SMSE@Escapement_HOS[, , , y], 1, sum)
-  ER * Esc_HOS
+K <- sapply(SMSE_list, function(x) {
+  x@Misc$ESSR_catch[, y]
 }) %>%
   reshape2::melt() %>%
-  rename(Simulation = Var1, `ESSR Catch` = value) %>%
-  mutate(scenario = name[Var2])
-
-P_Sgen <- sapply(SMSE_list, function(x, Sgen = 250) {
-  val <- rowSums(x@NOS[, 1, , y]) >= Sgen
-  mean(val)
-})
-
-P_Smsy85 <- sapply(SMSE_list, function(x, SMSY = 560) {
-  val <- rowSums(x@NOS[, 1, , y]) >= 0.85 * SMSY
-  mean(val)
-})
+  rename(Simulation = Var1, Catch = value, n = Var2)
 
 Egg <- sapply(SMSE_list, function(x) x@Egg_NOS[, 1, y] + x@Egg_HOS[, 1, y]) %>%
   reshape2::melt() %>%
-  rename(Simulation = Var1, Egg = value) %>%
-  mutate(Egg = Egg/1e6) %>%
-  mutate(scenario = name[Var2])
+  rename(Simulation = Var1, Egg = value, n = Var2) %>%
+  mutate(Egg = Egg/1e6)
 
-val_prob <- data.frame(
-  scenario = name,
-  P_250 = P_Sgen,
-  P_476 = P_Smsy85
+Rel <- sapply(SMSE_list, function(x) x@Smolt_Rel[, 1, y]) %>%
+  reshape2::melt() %>%
+  rename(Simulation = Var1, Releases = value, n = Var2) %>%
+  mutate(Releases = Releases/1e5)
+
+Option_name <- data.frame(
+  Option = gr$Option[1:9]
 ) %>%
-  reshape2::melt(id.vars = "scenario") %>%
-  rename(m = value) %>%
-  mutate(median = m, lwr = m, upr = m)
+  mutate(scenario = paste0("(", 1:9, ") ", Option))
 
-val_sim <- list(PNI, #NOS,
-                TS, pHOSeff, p_wild, MA, #Fitness,
-                Esc, Brood, K, pNOBeff, Egg) %>%
+# All in one data frame
+val_sim <- list(PNI, TS, pNOBeff, pHOSeff, p_wild, MA,
+                Brood, K, Esc, Egg, Rel) %>%
   Reduce(left_join, .) %>%
-  select(!Var2) %>%
-  reshape2::melt(id.vars = c("Simulation", "scenario")) %>%
+  left_join(gr %>% select(Scenario, Option, n), by = "n") %>%
+  reshape2::melt(id.vars = c("Simulation", "Option", "Scenario", "n")) %>%
   summarise(m = mean(value),
             median = median(value, na.rm = TRUE),
             lwr = quantile(value, 0.25, na.rm = TRUE),
             upr = quantile(value, 0.75, na.rm = TRUE),
-            .by = c(scenario, variable)) %>%
-  rbind(val_prob) %>%
-  left_join(gr, by = "scenario") %>%
-  mutate(scenario = factor(scenario, rev(name)))
-
-
-plot_dotplot <- function(val_sim) {
-  g <- val_sim %>%
-    ggplot(aes(scenario, median, ymin = lwr, ymax = upr, shape = factor(ESSR_ER), colour = factor(pNOB_target))) +
-    facet_wrap(vars(variable), scales = "free_x", strip.position = "top") +
-    geom_point() +
-    geom_linerange() +
-    coord_flip()
-
-  g
-}
-
-pm_primary <- c("PNI", "Total Spawners", "P_250", "P_476", "pNOBeff")
-pm_ancillary <- c("pHOSeff", "pWILD", "Mean age", "Brood", "ESSR Catch", "Escapement", "Egg")
-
-g <- val_sim %>%
-  filter(variable %in% pm_primary) %>%
-  plot_dotplot() +
-  scale_shape_manual(values = c(1, 4, 16)) +
-  #theme(strip.placement = "outside") +
-  theme(legend.position = "bottom") +
-  guides(colour = guide_legend(ncol = 1), shape = guide_legend(ncol = 1)) +
-  labs(x = NULL, y = NULL, shape = "ESSR ER", colour = "pNOB target")
-ggsave("figures/SMSE/performance_metrics_primary.png", g, width = 6, height = 5.5)
-
-g <- val_sim %>%
-  filter(variable %in% pm_ancillary) %>%
-  plot_dotplot() +
-  scale_shape_manual(values = c(1, 4, 16)) +
-  #theme(strip.placement = "outside") +
-  theme(legend.position = "bottom") +
-  guides(colour = guide_legend(ncol = 1), shape = guide_legend(ncol = 1)) +
-  labs(x = NULL, y = NULL, shape = "ESSR ER", colour = "pNOB target")
-ggsave("figures/SMSE/performance_metrics_ancillary.png", g, width = 6, height = 7)
-
-d <- val_sim %>%
-  select(scenario, variable, median) %>%
+            .by = c("Option", "Scenario", "n", "variable")) %>%
+  left_join(Option_name, by = "Option") %>%
+  mutate(scenario = factor(scenario, rev(Option_name$scenario))) %>%
   mutate(variable = factor(variable, c(pm_primary, pm_ancillary)))
 
-plot_table <- function(df, padding = 0.52) {
+pm_primary <- c("PNI", "Total Spawners")
+pm_ancillary <- c("pNOBeff", "pHOSeff", "pWILD", "Mean age",
+                  "Brood", "Catch", "Escapement", "Egg", "Releases")
 
-  d <- df %>%
-    mutate(txt = signif(median, 3)) %>%
-    mutate(txt = ifelse(txt < 0.01, "<0.01", txt)) %>%
-    mutate(val_rel = median/max(median),
-           val_0_1 = (median - min(median)) / (max(median) - min(median)),
-           .by = variable)
+# Probability (end of projection) ----
+P_Sgen_NOS <- sapply(SMSE_list, function(x, Sgen = 250) {
+  val <- rowSums(x@NOS[, 1, , y]) >= Sgen
+  mean(val)
+})
 
-  g <- ggplot(d, aes(variable, scenario)) +
-    geom_tile(aes(fill = val_rel), alpha = 0.6, color = "white") +
-    geom_text(aes(label = txt), size = ggplot2::rel(3)) +
-    guides(fill = "none") +
-    labs(x = NULL, y = NULL) +
-    coord_cartesian(
-      expand = FALSE,
-      xlim = range(as.numeric(d$variable)) + c(-padding, padding),
-      ylim = range(as.numeric(d$scenario)) + c(-padding - 0.01, padding + 0.01)
-    ) +
-    theme(
-      panel.grid.major = element_blank(),
-      panel.grid.minor = element_blank(),
-      panel.border = element_blank(),
-      axis.ticks.x = element_blank(),
-      axis.ticks.y = element_blank(),
-      axis.text.x = element_text(color = "grey10", angle = 90),
-      strip.placement = "outside",
-      strip.background = element_blank()
-    ) +
-    scale_x_discrete(position = "top") +
-    scale_y_discrete(labels = levels(d$scenario)) +
-    scale_fill_gradient2(low = "deeppink", high = "green4", mid = "white", limits = c(0, 1), midpoint = 0.5)
-  g
+P_Smsy85_NOS <- sapply(SMSE_list, function(x, SMSY = 560) {
+  val <- rowSums(x@NOS[, 1, , y]) >= 0.85 * SMSY
+  mean(val)
+})
+
+P_Sgen <- sapply(SMSE_list, function(x, Sgen = 250) {
+  val <- rowSums(x@NOS[, 1, , y] + x@HOS[, 1, , y]) >= Sgen
+  mean(val)
+})
+
+P_Smsy85 <- sapply(SMSE_list, function(x, SMSY = 560) {
+  val <- rowSums(x@NOS[, 1, , y] + x@HOS[, 1, , y]) >= 0.85 * SMSY
+  mean(val)
+})
+
+P_1300 <- sapply(SMSE_list, function(x) {
+  val <- rowSums(x@NOS[, 1, , y] + x@HOS[, 1, , y]) >= 1300
+  mean(val)
+})
+
+val_prob <- data.frame(n = 1:nrow(gr)) %>%
+  mutate(
+    P_250_NOS = P_Sgen_NOS,
+    P_476_NOS = P_Smsy85_NOS,
+    P_250 = P_Sgen,
+    P_476 = P_Smsy85,
+    P_1300 = P_1300
+  ) %>%
+  reshape2::melt(id.vars = "n") %>%
+  left_join(gr) %>%
+  left_join(Option_name)
+
+
+source("99-Sarita-results-functions.R")
+
+for (i in 1:length(scenario_unique)) {
+
+  ind <- gr$Scenario == scenario_unique[i]
+  name <- gr$Option[ind]
+
+  dir <- file.path("figures", "SMSE", paste0("Set", i, "_"))
+
+  g1 <- ts_fn(SMSE_list[ind], name, var = "PNI") +
+    coord_cartesian(ylim = c(0, 1))
+
+  g2 <- ts_fn(SMSE_list[ind], name, var = "Total Spawners") +
+    coord_cartesian(ylim = c(0, 2500)) +
+    guides(colour = guide_legend(ncol = 2), fill = guide_legend(ncol = 2))
+
+  g3 <- ts_fn(SMSE_list[ind], name, var = "pHOS_effective") +
+    coord_cartesian(ylim = c(0, 1)) +
+    labs(y = expression(pHOS[eff]))
+
+  g4 <- ts_fn(SMSE_list[ind], name, var = "p_wild") +
+    coord_cartesian(ylim = c(0, 1)) +
+    labs(y = "pWILD")
+
+  g5 <- ts_fn(SMSE_list[ind], name, var = "Brood") +
+    coord_cartesian(ylim = c(0, 700))
+
+  g6 <- ts_fn(SMSE_list[ind], name, var = "pNOB") +
+    coord_cartesian(ylim = c(0, 1))
+
+  g7 <- ts_fn(SMSE_list[ind], name, var = "Egg") +
+    coord_cartesian(ylim = c(0, 2e6)) +
+    labs(y = "Egg production (natural environment)")
+
+  g8 <- ts_fn(SMSE_list[ind], name, var = "Smolt_Rel") +
+    coord_cartesian(ylim = c(0, 5e5)) +
+    labs(y = "Hatchery releases")
+
+  g <- ggpubr::ggarrange(g1, g2, g3, g4, g5, g6, ncol = 2, nrow = 3, common.legend = TRUE, legend = "bottom")
+  ggsave(paste0(dir, "ts.png"), g, height = 7, width = 6)
+
+  #### Time series (annual medians for by scenario for each management option)
+  ind2 <- which(ind)
+
+  png(paste0(dir, "spawners_prop.png"), height = 6, width = 6, units = "in", res = 400)
+  par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
+  for (j in 1:length(name)) {
+    jj <- ind2[j]
+    plot_spawners(SMSE_list[[jj]])
+    box()
+    title(name[j])
+  }
+  dev.off()
+
+  png(paste0(dir, "spawners.png"), height = 6, width = 6, units = "in", res = 400)
+  par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
+  for (j in 1:length(name)) {
+    jj <- ind2[j]
+    plot_spawners(SMSE_list[[jj]], prop = FALSE, ylim = c(0, 2000))
+    box()
+    title(name[j])
+  }
+  dev.off()
+
+  png(paste0(dir, "p_brood.png"), height = 6, width = 6, units = "in", res = 400)
+  par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
+  for (j in 1:length(name)) {
+    jj <- ind2[j]
+    plot_escapement(SMSE_list[[jj]], ylim = c(0, 1))
+    box()
+    title(name[j])
+  }
+  dev.off()
+
+  png(paste0(dir, "pHOS_fitness.png"), height = 6, width = 6, units = "in", res = 400)
+  par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
+  for (j in 1:length(name)) {
+    jj <- ind2[j]
+    plot_fitness(SMSE_list[[jj]], ylim = c(0, 1))
+    title(name[j])
+  }
+  dev.off()
+
+  png(paste0(dir, "RS_HOS.png"), height = 6, width = 6, units = "in", res = 400)
+  par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
+  for (j in 1:length(name)) {
+    jj <- ind2[j]
+    plot_RS(SMSE_list[[jj]], var = "HOS", type = "abs",
+            name = c("Fed Fry", "Traditionals"), ylim = c(0, 2000))
+    title(name[j])
+  }
+  dev.off()
+
+  png(paste0(dir, "RS_Rel.png"), height = 6, width = 6, units = "in", res = 400)
+  par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
+  for (j in 1:length(name)) {
+    jj <- ind2[j]
+    plot_RS(SMSE_list[[jj]], var = "Smolt", type = "abs", name = c("Fed Fry", "Traditionals"),
+            ylab = "Hatchery releases")
+    title(name[j])
+  }
+  dev.off()
+
+  png(paste0(dir, "RS_Esc.png"), height = 6, width = 6, units = "in", res = 400)
+  par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
+  for (j in 1:length(name)) {
+    jj <- ind2[j]
+    plot_RS(SMSE_list[[jj]], var = "Esc", type = "abs", name = c("Fed Fry", "Traditionals"),
+            ylab = "HO Escapement",
+            ylim = c(0, 3000))
+    title(name[j])
+  }
+  dev.off()
+
+  png(paste0(dir, "LHG_NOS.png"), height = 6, width = 6, units = "in", res = 400)
+  par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
+  for (j in 1:length(name)) {
+    jj <- ind2[j]
+    plot_LHG(SMSE_list[[jj]], var = "NOS", type = "abs", name = c("Early Smalls", "Late Larges"),
+             ylab = "NOS",
+             ylim = c(0, 300))
+    title(name[j])
+  }
+  dev.off()
+
+  png(paste0(dir, "LHG_Esc.png"), height = 6, width = 6, units = "in", res = 400)
+  par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
+  for (j in 1:length(name)) {
+    jj <- ind2[j]
+    plot_LHG(SMSE_list[[jj]], var = "Esc", type = "abs", name = c("Early Smalls", "Late Larges"),
+             ylab = "NO Escapement",
+             ylim = c(0, 300))
+    title(name[j])
+  }
+  dev.off()
+
+  png(paste0(dir, "LHG_Smolt.png"), height = 6, width = 6, units = "in", res = 400)
+  par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
+  for (j in 1:length(name)) {
+    jj <- ind2[j]
+    plot_LHG(SMSE_list[[jj]], var = "Smolt", type = "abs", name = c("Early Smalls", "Late Larges"),
+             ylab = "NO outmigrating juveniles",
+             ylim = c(0, 3e5))
+    title(name[j])
+  }
+  dev.off()
+
+
+
+
+  # Make figure of performance metrics (all simulations at end of projection) ----
+  y <- 29
+
+  g <- val_sim %>%
+    filter(Scenario == scenario_unique[i]) %>%
+    left_join(gr) %>%
+    #filter(variable %in% pm_primary) %>%
+    plot_dotplot() +
+    scale_shape_manual(values = c(1, 4, 16)) +
+    #theme(strip.placement = "outside") +
+    theme(legend.position = "bottom") +
+    guides(colour = guide_legend(ncol = 1), shape = guide_legend(ncol = 1)) +
+    labs(x = NULL, y = NULL, shape = "ER", colour = "pNOB target") +
+    ggtitle(scenario_unique[i])
+  ggsave(paste0(dir, "performance_metrics.png"), g, width = 6, height = 7)
+
+  # Performance metrics (medians at end of the projection) ----
+  d <- val_sim %>%
+    filter(Scenario == scenario_unique[i]) %>%
+    select(scenario, variable, median)
+
+  g <- plot_table(d) +
+    geom_vline(xintercept = length(pm_primary) + 0.5, linewidth = 1, linetype = 2) +
+    ggtitle(scenario_unique[i])
+  ggsave(paste0(dir, "performance_table_full.png"), g, width = 7, height = 3.5)
+
+  # Probability (end of projection) ----
+  d_prob <- val_prob %>%
+    rename(median = value) %>%
+    filter(Scenario == scenario_unique[i]) %>%
+    select(scenario, variable, median) %>%
+    mutate(variable = factor(variable),
+           scenario = factor(scenario, rev(Option_name$scenario)))
+
+  g <- plot_table(d_prob) +
+    ggtitle(scenario_unique[i])
+  ggsave(paste0(dir, "prob_table.png"), g, width = 5, height = 3.5)
+
 }
-g <- plot_table(d) +
-  geom_vline(xintercept = 5.5, linewidth = 1, linetype = 2) +
-  geom_hline(yintercept = 5.5, linewidth = 1, linetype = 3)
-ggsave("figures/SMSE/performance_table_full.png", g, width = 7, height = 3.5)
 
-d_sens <- d %>%
-  filter(scenario %in% name[c(1, 10:14)]) %>%
-  mutate(scenario = factor(scenario, levels = rev(name[c(1, 10:14)])))
-g <- plot_table(d_sens) +
-  geom_vline(xintercept = 5.5, linewidth = 1, linetype = 2) +
-  geom_hline(yintercept = 5.5, linewidth = 1, linetype = 3)
-ggsave("figures/SMSE/performance_table_sens.png", g, width = 5.5, height = 3)
+#### Decision table for all scenarios ----
 
-g <- salmonMSE::plot_tradeoff(
-  val_sim %>% filter(variable == "Total Spawners", ref == "grid") %>% select(lwr, median, upr) %>% as.matrix(),
-  val_sim %>% filter(variable == "PNI", ref == "grid") %>% select(lwr, median, upr) %>% as.matrix(),
-  val_sim %>% filter(variable == "Total Spawners", ref == "grid") %>% pull(pNOB_target) %>% factor(),
-  val_sim %>% filter(variable == "Total Spawners", ref == "grid") %>% pull(ESSR_ER) %>% factor(),
-  xlab = "Total spawners",
-  ylab = "PNI",
-  x1lab = "pNOB target",
-  x2lab = "ESSR ER"
-) +
-  scale_shape_manual(values = c(1, 4, 16))
-ggsave("figures/SMSE/tradeoff_PNI.png", g, width = 4.5, height = 3)
+y <- 29
 
-# PNI decision table
-PNI_dt <- val_sim %>% filter(variable == "PNI", ref == "grid")
-g <- salmonMSE::plot_decision_table(
-  x = PNI_dt$ESSR_ER,
-  y = PNI_dt$pNOB_target,
-  z = PNI_dt$median,
-  title = "Median PNI",
-  xlab = "ESSR ER",
-  ylab = "pNOB target"
-)
-ggsave("figures/SMSE/decisiontable_PNI.png", g, width = 3, height = 3)
+dir_dt <- file.path("figures", "SMSE")
+
+g <- val_sim %>%
+  left_join(gr) %>%
+  filter(variable == "PNI") %>%
+  select(Scenario, ER, pNOB_target, median) %>%
+  rename(value = median) %>%
+  decision_table_grid()
+ggsave(file.path(dir_dt, "decisiontable_PNI.png"), g, width = 5, height = 5)
+
+g <- val_sim %>%
+  left_join(gr) %>%
+  filter(variable == "Total Spawners") %>%
+  select(Scenario, ER, pNOB_target, median) %>%
+  rename(value = median) %>%
+  decision_table_grid("Total Spawners")
+ggsave(file.path(dir_dt, "decisiontable_sp.png"), g, width = 5, height = 5)
+
+g <- val_sim %>%
+  left_join(gr) %>%
+  filter(variable == "Releases") %>%
+  select(Scenario, ER, pNOB_target, median) %>%
+  rename(value = median) %>%
+  decision_table_grid("Hatchery releases (100,000s)")
+ggsave(file.path(dir_dt, "decisiontable_rel.png"), g, width = 5, height = 5)
+
+g <- val_prob %>%
+  left_join(gr) %>%
+  filter(variable == "P_1300") %>%
+  select(Scenario, ER, pNOB_target, value) %>%
+  decision_table_grid("P_1300")
+ggsave(file.path(dir_dt, "decisiontable_P_1300.png"), g, width = 5, height = 5)
+
+
+g <- val_sim %>%
+  left_join(gr) %>%
+  #mutate(lwr = median, upr = median) %>%
+  tradeoff_grid(xlim = c(0, 4000), ylim = c(0, 1))
+ggsave(file.path(dir_dt, "tradeoff_PNI_sp.png"), g, width = 5, height = 5)
+
