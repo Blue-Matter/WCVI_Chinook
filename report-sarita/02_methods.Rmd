@@ -201,9 +201,9 @@ csasdown::csas_table(
   kableExtra::column_spec(2, width = "3in")
 ```
 
-## Scenarios
+## Management options
 
-A reference grid was developed from a factorial combination of three ESSR exploitation rate targets (0.5, 0.75, and 1) and three target pNOB values (0.5, 0.75, and 1.00) in a factorial combination, leading to nine (9) scenarios.
+A reference grid was developed from a factorial combination of three in-river exploitation rate targets (0.5, 0.75, and 1) and three target pNOB values (0.5, 0.75, and 1.00) in a factorial combination, leading to nine (9) scenarios.
 
 Additional sensitivity scenarios include:
 
@@ -211,7 +211,7 @@ Additional sensitivity scenarios include:
 11. 90% Fed Fry - 10% Traditionals Release Strategy with 500,000 annual releases
 12. High survival (fry/spawner). Assume mean environmental variable with 80% days in October with high daily discharge (compared to 60%), i.e., wetter autumns which may allow eggs to survival to increase as a larger proportion are in suitable freshwater habitat. This results in an average egg-fry survival of 0.18.
 13. Density-dependence. Currently no density-dependence is in the reference grid, this additional scenario adds a capacity of 1300 spawners. A hockey-stick relationship is used where the number of spawners is equal to the escapment until the capacity is reached (Figure \@ref(fig:prespawn)). 
-14. Declining maturity. The Sarita ERM estimates declining maturity (earlier age of maturity) in recent decades. The reference grid uses a recent mean, but this scenario uses the trend during 1990--2018 and continues the trend into the projection (Figure \@ref(fig:mat-trend)).
+14. Declining maturity and fecundity. The Sarita ERM estimates declining maturity (earlier age of maturity) in recent decades. The reference grid uses a recent mean, but this scenario uses the trend during 1990--2018 and continues the trend into the projection (Figure \@ref(fig:mat-trend)). Fecundity at age decreased during the projection (Figure \@ref(fig:fec-trend)). A 5 percent reduction in size at age per decade was used, and the corresponding fecundity was calculated from the fecundity-at-length model in @brown2025.
 
 Sensitivity scenarios use the ESSR exploitation rate of 0.5 and pNOB target of 0.5.
 
@@ -230,6 +230,12 @@ knitr::include_graphics(here::here("figures/SMSE/prespawn_mortality.png"))
 knitr::include_graphics(here::here("figures/SMSE/Sarita_proj_maturity.png"))
 ```
 
+(ref:fig-fec-trend) Fecundity at age modeled in the projection for the declining maturity and fecundity sensitivity scenario. A 5% reduction in size at age per decade was used, and the corresponding fecundity was calculated from the fecundity-at-length model in @brown2025.
+
+```{r fec-trend, fig.cap="(ref:fig-fec-trend)"}
+knitr::include_graphics(here::here("figures/SMSE/Sarita_decline_fecundity.png"))
+```
+
 
 ## Performance metrics
 
@@ -240,22 +246,26 @@ The primary performance metrics are:
 
 - **PNI** proportion natural influence to determine the extent of hatchery influence to the spawning population
 - **Total spawners** to determine the overall size of the spawning population
-- **P_250** probability that natural spawners exceed the lower benchmark of 250 [@brown2025]
-- **P_476** probability that natural spawners exceed the upper benchmark of 476 [@brown2025]
-- **pNOBeff** the "effective pNOB" to validate whether the pNOB target can be achieved. The effective pNOB is weighted by age class fecundity while the nominal pNOB used in the target is calculated from abundance only. The realized effective pNOB can differ from the nominal target value for two reasons. 
-First, there can be differences in the age distribution of hatchery and natural escapement. For example, hatchery origin fish is younger and less fecund, leading to a higher effective pNOB than the nominal pNOB. Second, there may be insufficient natural escapement to achieve the pNOB target.
+- **P_250_NOS** probability that natural origin spawners exceed the lower benchmark of 250 [@brown2025]
+- **P_476_NOS** probability that natural origin spawners exceed the upper benchmark of 476 [@brown2025]
+- **P_250** probability that total spawners exceed the lower benchmark of 250
+- **P_476** probability that total spawners exceed the upper benchmark of 476
+- **P_1300** probability that total spawners exceed 1300
 
 The ancillary performance metrics are:
 
+- **pNOBeff** the "effective pNOB" to validate whether the pNOB target can be achieved. The effective pNOB is weighted by age class fecundity while the nominal pNOB used in the target is calculated from abundance only. The realized effective pNOB can differ from the nominal target value for two reasons. 
+First, there can be differences in the age distribution of hatchery and natural escapement. For example, hatchery origin fish is younger and less fecund, leading to a higher effective pNOB than the nominal pNOB. Second, there may be insufficient natural escapement to achieve the pNOB target.
 - **pHOSeff** proportion of effective hatchery spawners used to calculate **PNI**
 - **pWILD** proportion wild spawners to support Wild Salmon Policy
 - **Mean age of spawners** used as an indicator for the presence of older spawners
 - **Brood** number of natural and hatchery origin brood used to validate whether the modeled size of the hatchery based on release targets is similar in size to the current hatchery
-- **ESSR catch** size of the ESSR catch
+- **Catch** size of the in-river harvest
 - **Escapement** mature fish returning after vulnerability to the terminal fishery
 - **Egg** production in the natural environment from NOS and HOS, where trends may differ from the number of spawners due to differences in fecundity at age and time (units of million of eggs)
+- **Releases** hatchery production, summed across release strategies (units of hundreds of thousands of juveniles)
 
-The median values across simulations are reported, except for **P_250** and **P_476**. 
+The median values across simulations are reported, except for the probability-based metrics. 
 A summary is provided in Table \@ref(tab:pm).
 
 ```{r pm, results="as-is"}
@@ -264,7 +274,7 @@ pm <- readr::read_csv(here::here("tables/pm.csv"))
 csasdown::csas_table(
   pm,
   #format = "latex",
-  caption = "Definitions of performance metrics, either a median or probability calculated across simulations per scenario."
+  caption = "Definitions of performance metrics, either a median or probability calculated across simulations per scenario. Primary performance metrics are intended to describe core outcomes to meet policy objectives, while ancillary metrics are intended to confirm and support primary metrics and aid understanding of the system dynamics."
 )
 ```
 
