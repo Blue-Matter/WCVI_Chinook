@@ -10,16 +10,16 @@ gr <- expand.grid(
   surv = c("avg", "high"),
   fec = "constant"
 ) %>%
-  mutate(Scenario = ifelse(surv == "avg", "Base (high ocean ER)", "High freshwater survival"))
+  mutate(Scenario = ifelse(surv == "avg", "A. Base (high ocean ER)", "B. High freshwater survival"))
 
 gr <- rbind(
   gr,
   gr %>% filter(surv == "avg") %>%
     mutate(ocean_ER_scalar = 0.75) %>%
-    mutate(Scenario = "Lower ocean ER"),
+    mutate(Scenario = "C. Lower ocean ER"),
   gr %>% filter(surv == "avg") %>%
     mutate(ocean_ER_scalar = 0.75, fec = "decline") %>%
-    mutate(Scenario = "Lower ocean ER, earlier mat., & decline fec.")
+    mutate(Scenario = "D. Lower ocean ER, decline mat & fec")
 ) %>%
   mutate(
     Option = paste0("ER = ", ER, ", pNOB = ", pNOB_target),
@@ -102,23 +102,20 @@ Option_name <- data.frame(
   mutate(scenario = paste0("(", 1:9, ") ", Option))
 
 # All in one data frame
-val_sim <- list(PNI, TS, pNOBeff, pHOSeff, p_wild, MA,
-                Brood, K, Esc, Egg, Rel) %>%
+val_sim_all <- list(PNI, TS, pNOBeff, pHOSeff, p_wild, MA,
+                    Brood, K, Esc, Egg, Rel) %>%
   Reduce(left_join, .) %>%
   left_join(gr %>% select(Scenario, Option, n), by = "n") %>%
-  reshape2::melt(id.vars = c("Simulation", "Option", "Scenario", "n")) %>%
+  reshape2::melt(id.vars = c("Simulation", "Option", "Scenario", "n"))
+
+val_sim <- val_sim_all %>%
   summarise(m = mean(value),
             median = median(value, na.rm = TRUE),
             lwr = quantile(value, 0.25, na.rm = TRUE),
             upr = quantile(value, 0.75, na.rm = TRUE),
             .by = c("Option", "Scenario", "n", "variable")) %>%
   left_join(Option_name, by = "Option") %>%
-  mutate(scenario = factor(scenario, rev(Option_name$scenario))) %>%
-  mutate(variable = factor(variable, c(pm_primary, pm_ancillary)))
-
-pm_primary <- c("PNI", "Total Spawners")
-pm_ancillary <- c("pNOBeff", "pHOSeff", "pWILD", "Mean age",
-                  "Brood", "Catch", "Escapement", "Egg", "Releases")
+  mutate(scenario = factor(scenario, rev(Option_name$scenario)))
 
 # Probability (end of projection) ----
 P_Sgen_NOS <- sapply(SMSE_list, function(x, Sgen = 250) {
@@ -160,158 +157,186 @@ val_prob <- data.frame(n = 1:nrow(gr)) %>%
 
 
 source("99-Sarita-results-functions.R")
+pm_primary <- c("PNI", "Total Spawners", "P_250_NOS", "P_476_NOS", "P_250", "P_476", "P_1300")
+pm_ancillary <- c("pNOBeff", "pHOSeff", "pWILD", "Mean age",
+                  "Brood", "Catch", "Escapement", "Egg", "Releases")
+
 
 for (i in 1:length(scenario_unique)) {
 
   ind <- gr$Scenario == scenario_unique[i]
-  name <- gr$Option[ind]
 
   dir <- file.path("figures", "SMSE", paste0("Set", i, "_"))
 
-  g1 <- ts_fn(SMSE_list[ind], name, var = "PNI") +
+  #### Time series ribbon plots (annual medians + 95% intervals)
+  g1 <- ts_fn(SMSE_list[ind], Option_name$scenario, var = "PNI") +
     coord_cartesian(ylim = c(0, 1))
 
-  g2 <- ts_fn(SMSE_list[ind], name, var = "Total Spawners") +
+  g2 <- ts_fn(SMSE_list[ind], Option_name$scenario, var = "Total Spawners") +
     coord_cartesian(ylim = c(0, 2500)) +
     guides(colour = guide_legend(ncol = 2), fill = guide_legend(ncol = 2))
 
-  g3 <- ts_fn(SMSE_list[ind], name, var = "pHOS_effective") +
+  g3 <- ts_fn(SMSE_list[ind], Option_name$scenario, var = "pHOS_effective") +
     coord_cartesian(ylim = c(0, 1)) +
     labs(y = expression(pHOS[eff]))
 
-  g4 <- ts_fn(SMSE_list[ind], name, var = "p_wild") +
+  g4 <- ts_fn(SMSE_list[ind], Option_name$scenario, var = "p_wild") +
     coord_cartesian(ylim = c(0, 1)) +
     labs(y = "pWILD")
 
-  g5 <- ts_fn(SMSE_list[ind], name, var = "Brood") +
+  g5 <- ts_fn(SMSE_list[ind], Option_name$scenario, var = "Brood") +
     coord_cartesian(ylim = c(0, 700))
 
-  g6 <- ts_fn(SMSE_list[ind], name, var = "pNOB") +
+  g6 <- ts_fn(SMSE_list[ind], Option_name$scenario, var = "pNOB") +
     coord_cartesian(ylim = c(0, 1))
 
-  g7 <- ts_fn(SMSE_list[ind], name, var = "Egg") +
+  g7 <- ts_fn(SMSE_list[ind], Option_name$scenario, var = "Egg") +
     coord_cartesian(ylim = c(0, 2e6)) +
     labs(y = "Egg production (natural environment)")
 
-  g8 <- ts_fn(SMSE_list[ind], name, var = "Smolt_Rel") +
+  g8 <- ts_fn(SMSE_list[ind], Option_name$scenario, var = "Smolt_Rel") +
     coord_cartesian(ylim = c(0, 5e5)) +
     labs(y = "Hatchery releases")
 
   g <- ggpubr::ggarrange(g1, g2, g3, g4, g5, g6, ncol = 2, nrow = 3, common.legend = TRUE, legend = "bottom")
   ggsave(paste0(dir, "ts.png"), g, height = 7, width = 6)
 
-  #### Time series (annual medians for by scenario for each management option)
+  #### Time series barplots (annual medians for by scenario for each management option)
   ind2 <- which(ind)
 
   png(paste0(dir, "spawners_prop.png"), height = 6, width = 6, units = "in", res = 400)
   par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
-  for (j in 1:length(name)) {
+  for (j in 1:nrow(Option_name)) {
     jj <- ind2[j]
     plot_spawners(SMSE_list[[jj]])
     box()
-    title(name[j])
+    title(Option_name$scenario[j])
   }
   dev.off()
 
   png(paste0(dir, "spawners.png"), height = 6, width = 6, units = "in", res = 400)
   par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
-  for (j in 1:length(name)) {
+  for (j in 1:nrow(Option_name)) {
     jj <- ind2[j]
     plot_spawners(SMSE_list[[jj]], prop = FALSE, ylim = c(0, 2000))
     box()
-    title(name[j])
+    title(Option_name$scenario[j])
   }
   dev.off()
 
   png(paste0(dir, "p_brood.png"), height = 6, width = 6, units = "in", res = 400)
   par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
-  for (j in 1:length(name)) {
+  for (j in 1:nrow(Option_name)) {
     jj <- ind2[j]
     plot_escapement(SMSE_list[[jj]], ylim = c(0, 1))
     box()
-    title(name[j])
+    title(Option_name$scenario[j])
   }
   dev.off()
 
   png(paste0(dir, "pHOS_fitness.png"), height = 6, width = 6, units = "in", res = 400)
   par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
-  for (j in 1:length(name)) {
+  for (j in 1:nrow(Option_name)) {
     jj <- ind2[j]
     plot_fitness(SMSE_list[[jj]], ylim = c(0, 1))
-    title(name[j])
+    title(Option_name$scenario[j])
   }
   dev.off()
 
   png(paste0(dir, "RS_HOS.png"), height = 6, width = 6, units = "in", res = 400)
   par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
-  for (j in 1:length(name)) {
+  for (j in 1:nrow(Option_name)) {
     jj <- ind2[j]
     plot_RS(SMSE_list[[jj]], var = "HOS", type = "abs",
             name = c("Fed Fry", "Traditionals"), ylim = c(0, 2000))
-    title(name[j])
+    title(Option_name$scenario[j])
   }
   dev.off()
 
   png(paste0(dir, "RS_Rel.png"), height = 6, width = 6, units = "in", res = 400)
   par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
-  for (j in 1:length(name)) {
+  for (j in 1:nrow(Option_name)) {
     jj <- ind2[j]
     plot_RS(SMSE_list[[jj]], var = "Smolt", type = "abs", name = c("Fed Fry", "Traditionals"),
             ylab = "Hatchery releases")
-    title(name[j])
+    title(Option_name$scenario[j])
   }
   dev.off()
 
   png(paste0(dir, "RS_Esc.png"), height = 6, width = 6, units = "in", res = 400)
   par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
-  for (j in 1:length(name)) {
+  for (j in 1:nrow(Option_name)) {
     jj <- ind2[j]
     plot_RS(SMSE_list[[jj]], var = "Esc", type = "abs", name = c("Fed Fry", "Traditionals"),
             ylab = "HO Escapement",
             ylim = c(0, 3000))
-    title(name[j])
+    title(Option_name$scenario[j])
   }
   dev.off()
 
   png(paste0(dir, "LHG_NOS.png"), height = 6, width = 6, units = "in", res = 400)
   par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
-  for (j in 1:length(name)) {
+  for (j in 1:nrow(Option_name)) {
     jj <- ind2[j]
     plot_LHG(SMSE_list[[jj]], var = "NOS", type = "abs", name = c("Early Smalls", "Late Larges"),
              ylab = "NOS",
              ylim = c(0, 300))
-    title(name[j])
+    title(Option_name$scenario[j])
   }
   dev.off()
 
   png(paste0(dir, "LHG_Esc.png"), height = 6, width = 6, units = "in", res = 400)
   par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
-  for (j in 1:length(name)) {
+  for (j in 1:nrow(Option_name)) {
     jj <- ind2[j]
     plot_LHG(SMSE_list[[jj]], var = "Esc", type = "abs", name = c("Early Smalls", "Late Larges"),
              ylab = "NO Escapement",
              ylim = c(0, 300))
-    title(name[j])
+    title(Option_name$scenario[j])
   }
   dev.off()
 
   png(paste0(dir, "LHG_Smolt.png"), height = 6, width = 6, units = "in", res = 400)
   par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
-  for (j in 1:length(name)) {
+  for (j in 1:nrow(Option_name)) {
     jj <- ind2[j]
     plot_LHG(SMSE_list[[jj]], var = "Smolt", type = "abs", name = c("Early Smalls", "Late Larges"),
              ylab = "NO outmigrating juveniles",
              ylim = c(0, 3e5))
-    title(name[j])
+    title(Option_name$scenario[j])
   }
   dev.off()
 
+  # Histograms across simulations of performance metrics at end of projection
+  g <- val_sim_all %>%
+    filter(Scenario == scenario_unique[i]) %>%
+    left_join(Option_name) %>%
+    filter(variable == "PNI") %>%
+    plot_histogram() +
+    ggtitle(scenario_unique[i]) +
+    coord_cartesian(xlim = c(0, 1))
+  ggsave(paste0(dir, "histogram_PNI.png"), g, width = 6, height = 4)
 
+  ref <- data.frame(
+    Lower = 250,
+    Upper = 476,
+    Srep = 1300
+  ) %>%
+    reshape2::melt()
 
+  g <- val_sim_all %>%
+    filter(Scenario == scenario_unique[i]) %>%
+    left_join(Option_name) %>%
+    filter(variable == "Total Spawners") %>%
+    plot_histogram("Total Spawners", binwidth = 100) +
+    ggtitle(scenario_unique[i]) +
+    geom_vline(data = ref, aes(xintercept = value, linetype = variable)) +
+    theme(legend.position = "bottom") +
+    labs(linetype = "Benchmark") +
+    scale_linetype_manual(values = c(2, 3, 4))
+  ggsave(paste0(dir, "histogram_TS.png"), g, width = 6, height = 4.5)
 
   # Make figure of performance metrics (all simulations at end of projection) ----
-  y <- 29
-
   g <- val_sim %>%
     filter(Scenario == scenario_unique[i]) %>%
     left_join(gr) %>%
@@ -325,27 +350,34 @@ for (i in 1:length(scenario_unique)) {
     ggtitle(scenario_unique[i])
   ggsave(paste0(dir, "performance_metrics.png"), g, width = 6, height = 7)
 
-  # Performance metrics (medians at end of the projection) ----
-  d <- val_sim %>%
+  # Primary performance metrics (medians at end of the projection) ----
+  d <- rbind(
+    val_sim %>% select(Scenario, variable, median, scenario),
+    val_prob %>% select(Scenario, variable, value, scenario) %>% rename(median = value)
+  ) %>%
     filter(Scenario == scenario_unique[i]) %>%
-    select(scenario, variable, median)
+    mutate(variable = factor(variable, c(pm_primary, pm_ancillary)))
+
+  #d <- val_sim %>%
+  #  filter(Scenario == scenario_unique[i]) %>%
+  #  select(scenario, variable, median)
 
   g <- plot_table(d) +
     geom_vline(xintercept = length(pm_primary) + 0.5, linewidth = 1, linetype = 2) +
     ggtitle(scenario_unique[i])
-  ggsave(paste0(dir, "performance_table_full.png"), g, width = 7, height = 3.5)
+  ggsave(paste0(dir, "performance_table_full.png"), g, width = 7.5, height = 3)
 
   # Probability (end of projection) ----
-  d_prob <- val_prob %>%
-    rename(median = value) %>%
-    filter(Scenario == scenario_unique[i]) %>%
-    select(scenario, variable, median) %>%
-    mutate(variable = factor(variable),
-           scenario = factor(scenario, rev(Option_name$scenario)))
+  #d_prob <- val_prob %>%
+  #  rename(median = value) %>%
+  #  filter(Scenario == scenario_unique[i]) %>%
+  #  select(scenario, variable, median) %>%
+  #  mutate(variable = factor(variable),
+  #         scenario = factor(scenario, rev(Option_name$scenario)))
 
-  g <- plot_table(d_prob) +
-    ggtitle(scenario_unique[i])
-  ggsave(paste0(dir, "prob_table.png"), g, width = 5, height = 3.5)
+  #g <- plot_table(d_prob) +
+  #  ggtitle(scenario_unique[i])
+  #ggsave(paste0(dir, "prob_table.png"), g, width = 5, height = 3.5)
 
 }
 

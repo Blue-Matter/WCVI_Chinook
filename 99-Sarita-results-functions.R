@@ -126,3 +126,16 @@ tradeoff_grid <- function(val_sim, xname = "Total Spawners", yname = "PNI", xlab
   g <- ggpubr::ggarrange(plotlist = glist, ncol = 2, nrow = 2, legend = "bottom", common.legend = TRUE)
   g
 }
+
+
+
+plot_histogram <- function(val, var = "PNI", binwidth = 0.025, scales = "free_y") {
+  g <- val %>%
+    ggplot(aes(value)) +
+    geom_histogram(binwidth = binwidth, linewidth = 0.1, fill = "grey80", colour = "black") +
+    facet_wrap(vars(scenario), scales = scales) +
+    labs(x = var, y = "Frequency") +
+    theme(strip.background = element_blank())
+  g
+}
+
