@@ -1,27 +1,27 @@
 # Results
 
-See [Powerpoint](https://docs.google.com/presentation/d/11kjoLct44oaPhTa6U1NGXniin7DPAls9/edit?usp=sharing&ouid=110611304283721893731&rtpof=true&sd=true) presentation.
+See [Powerpoint](
+https://docs.google.com/presentation/d/1nplrbWoacLHRi26oOtWK6658BVNRzLG0?rtpof=true&usp=drive_fs) presentation, results as of September 19.
 
 
-(ref:fig-pf) Table of performance measures reporting outcomes at the end of the projection for reference scenarios (1-9, above dotted horizontal line) and sensitivity scenarios (10-14), with primary metrics left of the dashed vertical black line. Table cells report medians for all metrics except P_250 and P_476 which report probabilities. Each column is colour-coded with magenta representing zero, green the maximium value of each metric, and white representing half of the maximum. Total spawners, Brood, ESSR catch, and escapement are in units of abundance (> 0), mean age is in units of years (between 2--5), and all others are proportions/probabilities between 0--1.
+(ref:fig-pf) Table of performance measures reporting outcomes at the end of the projection for 9 management options (1-9, rows), with primary metrics left of the dashed vertical black line for scenario A. Each column is colour-coded with magenta representing zero, green the maximium value of each metric, and white representing half of the maximum. Total spawners, Brood, ESSR catch, and escapement are in units of abundance (> 0), mean age is in units of years (between 2--5), egg production is in millions, hatchery releases in hundreds of thousands, and all others are proportions/probabilities between 0--1. Table cells report medians for all metrics the probability-based metrics (prefixed with P_). Medians are calculated across 100 stochastic simulations, and may not be directly comparable across columns.
 
 ```{r pf, fig.cap="(ref:fig-pf)"}
-knitr::include_graphics(here::here("figures/SMSE/performance_table_full.png"))
-```
-
-(ref:fig-pf-sens) Subset of performance measures reporting outcomes at the end of the projection for sensitivity scenarios (10-14), which are based off of scenario (1). For more details, see caption of Figure \@ref(fig:pf).
-
-```{r pf-sens, fig.cap="(ref:fig-pf-sens)"}
-knitr::include_graphics(here::here("figures/SMSE/performance_table_sens.png"))
-```
-
-```{r pf-primary, fig.cap="Line and dot figure of the primary performance measures (panels) reporting outcomes. Medians are denoted in points and the lines span the 95% interval of values among simulations in each scenario. Colours denote the pNOB target and shapes denote the ESSR ER (exploitation rate). Total spawners, Brood, ESSR catch, and escapement are in units of abundance (> 0), mean age is in units of years (between 2--5), egg production is in millions, and all others are proportions/probabilities between 0--1."}
-knitr::include_graphics(here::here("figures/SMSE/performance_metrics_primary.png"))
+knitr::include_graphics(here::here("figures/SMSE/Set1_performance_table_full.png"))
 ```
 
 
-```{r pf-ancillary, fig.cap="Line and dot figure of the ancillary performance measures (panels) reporting outcomes. Medians are denoted in points and the lines span the 95% interval of values among simulations in each scenario. Colours denote the pNOB target and shapes denote the ESSR ER (exploitation rate). Brood, ESSR catch, and escapement are in units of abundance (> 0), mean age is in units of years (between 2--5), egg production is in millions, and all others are proportions/probabilities between 0--1."}
-knitr::include_graphics(here::here("figures/SMSE/performance_metrics_ancillary.png"))
+```{r pf-primary, fig.cap="Line and dot figure of the performance measures (panels) reporting outcomes. Medians are denoted in points and the lines span the 95% interval of values among simulations in each scenario. Colours denote the pNOB target and shapes denote the in-river ER (exploitation rate). Total spawners, Brood, ESSR catch, and escapement are in units of abundance (> 0), mean age is in units of years (between 2--5), egg production is in millions, hatchery releases in hundreds of thousands, and all others are proportions between 0--1."}
+knitr::include_graphics(here::here("figures/SMSE/Set1_performance_metrics.png"))
+```
+
+
+```{r dt-pni, fig.cap="Decision tables of the median PNI across the grid of management options for in-river exploitation rate (ER) and hatchery pNOB targets across four scenarios (A-D). Within each table, colours correspond to the value of median PNI where magenta corresponds to zero, white corresponds to 0.5, and green corresponds to one."}
+knitr::include_graphics(here::here("figures/SMSE/decisiontable_PNI.png"))
+```
+
+```{r dt-tradeoff, fig.cap="Tradeoff table that reports the median PNI (y-axis) and total spawners (x-axis) by in-river exploitation rate (points) and pNOB target (colours). Lines denote the 95% range of outcomes in the simulations."}
+knitr::include_graphics(here::here("figures/SMSE/tradeoff_PNI_sp.png"))
 ```
 
 # Discussion
