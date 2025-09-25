@@ -1,6 +1,9 @@
 
 
 library(salmonMSE)
+library(tidyverse)
+
+source("99-Sarita-results-functions.R")
 
 # Identify scenarios and management options ----
 gr <- expand.grid(
@@ -107,6 +110,7 @@ val_sim_all <- list(PNI, TS, pNOBeff, pHOSeff, p_wild, MA,
   Reduce(left_join, .) %>%
   left_join(gr %>% select(Scenario, Option, n), by = "n") %>%
   reshape2::melt(id.vars = c("Simulation", "Option", "Scenario", "n"))
+readr::write_csv(val_sim_all, file = "tables/Sarita_outcomes_sim.csv") # Save for Slick object
 
 val_sim <- val_sim_all %>%
   summarise(m = mean(value),
@@ -154,13 +158,27 @@ val_prob <- data.frame(n = 1:nrow(gr)) %>%
   reshape2::melt(id.vars = "n") %>%
   left_join(gr) %>%
   left_join(Option_name)
+readr::write_csv(val_prob, file = "tables/Sarita_outcomes_prob.csv") # Save for Slick object
+
+# Big data frame of state variables for each simulation and year (for Slick)
+state_var <- c("PNI", "Total Spawners", "pHOS_effective", "p_wild", "Brood", "pNOB", "Egg", "Smolt_Rel")
+df <- lapply(1:length(state_var), function(j) {
+  lapply(1:length(SMSE_list), function(i) {
+    .ts_fn(SMSE_list[[i]], var = state_var[j], all_sims = TRUE) %>%
+      reshape2::melt() %>%
+      rename(Simulation = Var1, Year = Var2) %>%
+      mutate(variable = state_var[j])
+  }) %>%
+    bind_rows()
+}) %>%
+  bind_rows()
+readr::write_csv(df, file = "tables/Sarita_outcomes_simulation.csv") # Save for Slick object
 
 
-source("99-Sarita-results-functions.R")
+#### Run loop over each of 4 scenarios for performance metric tables ----
 pm_primary <- c("PNI", "Total Spawners", "P_250_NOS", "P_476_NOS", "P_250", "P_476", "P_1300")
 pm_ancillary <- c("pNOBeff", "pHOSeff", "pWILD", "Mean age",
                   "Brood", "Catch", "Escapement", "Egg", "Releases")
-
 
 for (i in 1:length(scenario_unique)) {
 

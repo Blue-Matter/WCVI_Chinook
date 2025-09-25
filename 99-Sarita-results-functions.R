@@ -1,20 +1,37 @@
 
 
-.ts_fn <- function(SMSE, name, var) {
+.ts_fn <- function(SMSE, name, var, all_sims = FALSE) {
   require(salmonMSE)
 
-  if (var == "Brood") {
-    out <- apply(SMSE@NOB + SMSE@HOB, 3, quantile, c(0.025, 0.5, 0.975))
-  } else if (var == "Egg") {
-    out <- apply(SMSE@Egg_NOS + SMSE@Egg_HOS, 3, quantile, c(0.025, 0.5, 0.975))
+  if (all_sims) {
+    s <- 1
+
+    if (var == "Brood") {
+      res <- SMSE@NOB[, s, ] + SMSE@HOB[, s, ]
+    } else if (var == "Egg") {
+      res <- SMSE@Egg_NOS[, s, ] + SMSE@Egg_HOS[, s, ]
+    } else {
+      res <- plot_statevar_ts(SMSE, var, figure = FALSE, quant = FALSE)
+    }
+
   } else {
-    out <- plot_statevar_ts(SMSE, var, figure = FALSE, quant = TRUE)
+
+    if (var == "Brood") {
+      out <- apply(SMSE@NOB + SMSE@HOB, 3, quantile, c(0.025, 0.5, 0.975))
+    } else if (var == "Egg") {
+      out <- apply(SMSE@Egg_NOS + SMSE@Egg_HOS, 3, quantile, c(0.025, 0.5, 0.975))
+    } else {
+      out <- plot_statevar_ts(SMSE, var, figure = FALSE, quant = TRUE)
+    }
+
+    res <- reshape2::melt(out) %>%
+      rename(Year = Var2) %>%
+      mutate(name = name) %>%
+      reshape2::dcast(Year + name ~ Var1)
   }
 
-  reshape2::melt(out) %>%
-    rename(Year = Var2) %>%
-    mutate(name = name) %>%
-    reshape2::dcast(Year + name ~ Var1)
+  return(res)
+
 }
 
 ts_fn <- function(SMSE_list, name, var) {
