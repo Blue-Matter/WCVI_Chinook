@@ -47,6 +47,14 @@ brood <- readr::read_csv("data/Sarita/sarita_brood.csv") %>%
   rename(Year = `Row Labels`)
 brood$Broodtake <- rowSums(brood[, -1], na.rm = TRUE)
 
+png("figures/Sarita_brood.png", units = "in", height = 4, width = 6, res = 400)
+par(mar = c(5, 4, 1, 1))
+plot(`Sum of 01Used For Broodstock` ~ Year, brood, typ = "o", ylab = "Brood", ylim = c(0, 600))
+lines(Broodtake ~ Year, brood, typ = "o", ylab = "Broodstock", col = "red", pch = 16)
+graphics::grid()
+legend("topleft", c("Broodtake", "Brood + Holding Mortality + Other"), col = 1:2, pch = c(1, 16), lty = 1, bty = "n")
+dev.off()
+
 #g <- sarita_rel %>% reshape2::melt(id.vars = "Year") %>%
 #  ggplot(aes(Year, value, colour = variable)) +
 #  geom_line() +
