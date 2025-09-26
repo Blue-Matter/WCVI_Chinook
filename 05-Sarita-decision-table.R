@@ -109,7 +109,8 @@ val_sim_all <- list(PNI, TS, pNOBeff, pHOSeff, p_wild, MA,
                     Brood, K, Esc, Egg, Rel) %>%
   Reduce(left_join, .) %>%
   left_join(gr %>% select(Scenario, Option, n), by = "n") %>%
-  reshape2::melt(id.vars = c("Simulation", "Option", "Scenario", "n"))
+  reshape2::melt(id.vars = c("Simulation", "Option", "Scenario", "n")) %>%
+  left_join(Option_name)
 readr::write_csv(val_sim_all, file = "tables/Sarita_outcomes_sim.csv") # Save for Slick object
 
 val_sim <- val_sim_all %>%
@@ -161,18 +162,24 @@ val_prob <- data.frame(n = 1:nrow(gr)) %>%
 readr::write_csv(val_prob, file = "tables/Sarita_outcomes_prob.csv") # Save for Slick object
 
 # Big data frame of state variables for each simulation and year (for Slick)
-state_var <- c("PNI", "Total Spawners", "pHOS_effective", "p_wild", "Brood", "pNOB", "Egg", "Smolt_Rel")
+state_var <- c("PNI", "Total Spawners", "pNOB", "pHOS_effective", "p_wild", "Mean age", "Brood", "Catch", "Escapement", "Egg", "Smolt_Rel")
+state_names <- state_var
+state_names[3] <- "pNOBeff"
+state_names[4] <- "pHOSeff"
+
 df <- lapply(1:length(state_var), function(j) {
   lapply(1:length(SMSE_list), function(i) {
     .ts_fn(SMSE_list[[i]], var = state_var[j], all_sims = TRUE) %>%
       reshape2::melt() %>%
       rename(Simulation = Var1, Year = Var2) %>%
-      mutate(variable = state_var[j])
+      mutate(variable = state_names[j], n = gr$n[i])
   }) %>%
     bind_rows()
 }) %>%
-  bind_rows()
-readr::write_csv(df, file = "tables/Sarita_outcomes_simulation.csv") # Save for Slick object
+  bind_rows() %>%
+  left_join(select(gr, Scenario, Option, n), by = "n") %>%
+  left_join(Option_name)
+readr::write_csv(df, file = "tables/Sarita_outcomes_sim_year.csv") # Save for Slick object
 
 
 #### Run loop over each of 4 scenarios for performance metric tables ----

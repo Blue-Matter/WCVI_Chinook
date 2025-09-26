@@ -10,9 +10,17 @@
       res <- SMSE@NOB[, s, ] + SMSE@HOB[, s, ]
     } else if (var == "Egg") {
       res <- SMSE@Egg_NOS[, s, ] + SMSE@Egg_HOS[, s, ]
+    } else if (var == "Mean age") {
+      Sp <- SMSE@NOS[, 1, , ] + SMSE@HOS[, 1, , ]
+      res <- apply(Sp, c(1, 3), function(w) weighted.mean(x = 1:5, w = w))
+    } else if (var == "Escapement") {
+      res <- apply(SMSE@Escapement_NOS[, s, , ] + SMSE@Escapement_HOS[, s, , ], c(1, 3), sum)
+    } else if (var == "Catch") {
+      res <- SMSE@Misc$ESSR_catch
     } else {
       res <- plot_statevar_ts(SMSE, var, figure = FALSE, quant = FALSE)
     }
+    dimnames(res) <- NULL
 
   } else {
 
