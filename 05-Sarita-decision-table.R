@@ -6,22 +6,20 @@ library(tidyverse)
 source("99-Sarita-results-functions.R")
 
 # Identify scenarios and management options ----
-gr <- expand.grid(
-  ER = c(0.5, 0.75, 1),
-  pNOB_target = c(0.5, 0.75, 1),
+g_init <- expand.grid(
+  ER = c(0.5, 0.75, 0.999),
+  pNOB_target = c(0.5, 0.75, 0.99),
   ocean_ER_scalar = 1,
   surv = c("avg", "high"),
   fec = "constant"
-) %>%
-  mutate(Scenario = ifelse(surv == "avg", "A. Base (high ocean ER)", "B. High freshwater survival"))
+)
 
 gr <- rbind(
-  gr,
-  gr %>% filter(surv == "avg") %>%
-    mutate(ocean_ER_scalar = 0.75) %>%
+  g_init %>%
+    mutate(Scenario = ifelse(surv == "avg", "A. Base (high ocean ER)", "B. High freshwater survival")),
+  g_init %>% filter(surv == "avg") %>% mutate(ocean_ER_scalar = 0.75) %>%
     mutate(Scenario = "C. Lower ocean ER"),
-  gr %>% filter(surv == "avg") %>%
-    mutate(ocean_ER_scalar = 0.75, fec = "decline") %>%
+  g_init %>% filter(surv == "avg") %>% mutate(ocean_ER_scalar = 0.75, fec = "decline") %>%
     mutate(Scenario = "D. Lower ocean ER, decline mat & fec")
 ) %>%
   mutate(
@@ -407,7 +405,6 @@ for (i in 1:length(scenario_unique)) {
 }
 
 #### Decision table for all scenarios ----
-
 y <- 29
 
 dir_dt <- file.path("figures", "SMSE")
@@ -424,7 +421,7 @@ g <- val_sim %>%
   left_join(gr) %>%
   filter(variable == "Total Spawners") %>%
   select(Scenario, ER, pNOB_target, median) %>%
-  rename(value = median) %>%
+  mutate(value = round(median)) %>%
   decision_table_grid("Total Spawners")
 ggsave(file.path(dir_dt, "decisiontable_sp.png"), g, width = 5, height = 5)
 
@@ -447,6 +444,6 @@ ggsave(file.path(dir_dt, "decisiontable_P_1300.png"), g, width = 5, height = 5)
 g <- val_sim %>%
   left_join(gr) %>%
   #mutate(lwr = median, upr = median) %>%
-  tradeoff_grid(xlim = c(0, 4000), ylim = c(0, 1))
+  tradeoff_grid(xlim = c(0, 3000), ylim = c(0, 1))
 ggsave(file.path(dir_dt, "tradeoff_PNI_sp.png"), g, width = 5, height = 5)
 

@@ -3,7 +3,7 @@
 # First, create grid of pNOB target and in-river exploitation rate target
 # Default
 library(tidyverse)
-g <- expand.grid(
+g_init <- expand.grid(
   ER = c(0.5, 0.75, 0.999),
   pNOB_target = c(0.5, 0.75, 0.99),
   ocean_ER_scalar = 1,
@@ -12,10 +12,11 @@ g <- expand.grid(
 )
 
 g <- rbind(
-  g,
-  g %>% filter(surv == "avg") %>% mutate(ocean_ER_scalar = 0.75),
-  g %>% filter(surv == "avg") %>% mutate(ocean_ER_scalar = 0.75, fec = "decline")
-)
+  g_init,
+  g_init %>% filter(surv == "avg") %>% mutate(ocean_ER_scalar = 0.75),
+  g_init %>% filter(surv == "avg") %>% mutate(ocean_ER_scalar = 0.75, fec = "decline")
+) %>%
+  mutate(n = 1:n())
 
 nOM <- nrow(g)
 
