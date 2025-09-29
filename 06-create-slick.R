@@ -25,7 +25,9 @@ Demonstration of results to develop visualization app for salmonMSE.
 
 
 # Load results ----
-ts <- readr::read_csv("tables/Sarita_outcomes_sim_year.csv")
+ts <- readr::read_csv("tables/Sarita_outcomes_sim_year.csv") %>%
+  mutate(value = ifelse(variable == "Egg", value/1e6, value),
+         value = ifelse(variable == "Smolt_Rel", value/1e5, value))
 perf_sim <- readr::read_csv("tables/Sarita_outcomes_sim.csv")
 perf_prob <- readr::read_csv("tables/Sarita_outcomes_prob.csv")
 
