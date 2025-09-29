@@ -2,6 +2,7 @@
 # Create csv files in script 5
 library(Slick) # install.packages("Slick")
 library(tidyverse)
+library(reshape2)
 
 # See article at: https://slick.bluematterscience.com/articles/DevelopersGuide.html
 
@@ -234,4 +235,4 @@ saveRDS(slick, file = "Slick/Sarita_09.29.2025.slick")
 
 # Open App
 #slick <- readRDS(file = "Slick/Sarita_09.29.2025.slick")
-Slick::App(slick = slick)
+#Slick::App(slick = slick)

@@ -2,13 +2,14 @@
 
 library(salmonMSE)
 library(tidyverse)
+library(reshape2)
 
 source("99-Sarita-results-functions.R")
 
 # Identify scenarios and management options ----
 g_init <- expand.grid(
-  ER = c(0.5, 0.75, 0.999),
-  pNOB_target = c(0.5, 0.75, 0.99),
+  ER = c(0.5, 0.75, 1),
+  pNOB_target = c(0.5, 0.75, 1),
   ocean_ER_scalar = 1,
   surv = c("avg", "high"),
   fec = "constant"
