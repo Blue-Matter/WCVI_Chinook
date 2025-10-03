@@ -1,5 +1,6 @@
 
 library(tidyverse)
+library(reshape2)
 library(salmonMSE)
 
 
@@ -86,31 +87,18 @@ cwt_rel_annual <- cwt_rel %>%
   right_join(full_year) %>%
   mutate(rel = ifelse(is.na(rel), 0, rel))
 
+g <- ggplot(cwt_rel_annual, aes(BroodYear, rel)) +
+  geom_point() +
+  geom_line() +
+  labs(x = "Brood Year", y = "Robertson Creek CWT releases")
+
 # CWT escapement by brood year, age
+# Remove strays ----
 cwt_esc <- cwt_dat %>%
-  filter(fishery_type == "escapement") %>%
+  filter(fishery_type == "escapement", Coarse_description %in% c("Escapement", "Subsistence")) %>%
   summarise(n = sum(AdjustedEstimatedNumber), .by = c(BroodYear, Age)) %>%
   right_join(full_matrix, by = c("BroodYear", "Age")) %>%
   reshape2::acast(list("BroodYear", "Age"), value.var = "n", fill = 0)
-
-# Plot CWT escapement
-g <- cwt_dat %>%
-  filter(fishery_type == "escapement") %>%
-  summarise(n = sum(AdjustedEstimatedNumber), .by = c(BroodYear, Age)) %>%
-  right_join(full_matrix, by = c("BroodYear", "Age")) %>%
-  arrange(Age, BroodYear) %>%
-  mutate(p = n/sum(n, na.rm = TRUE), .by = BroodYear) %>%
-  filter(!is.na(p)) %>%
-  ggplot(aes(BroodYear, p, fill = factor(Age, levels = 5:2))) +
-  geom_col(width = 1, colour = "grey40") +
-  scale_fill_brewer(palette = "Set2") +
-  labs(x = "Brood Year", y = "Proportion", fill = "Age", title = "CWT escapement") +
-  coord_cartesian(expand = FALSE)
-ggsave("figures/CWT_esc_prop.png", g, height = 4, width = 6)
-
-g2 <- g +
-  coord_cartesian(expand = FALSE, xlim = c(2013.5, 2020.5))
-ggsave("figures/CWT_esc_prop2.png", g2, height = 4, width = 6)
 
 # Preterminal CWT
 cwt_pt <- cwt_dat %>%
@@ -121,12 +109,47 @@ cwt_pt <- cwt_dat %>%
 
 # Terminal CWT
 cwt_t <- cwt_dat %>%
-  filter(fishery_type == "terminal") %>%
+  filter(fishery_type == "terminal", grepl("TWCVI", ERA_fishery_name)) %>%
   summarise(n = sum(AdjustedEstimatedNumber), .by = c(BroodYear, Age)) %>%
   right_join(full_matrix, by = c("BroodYear", "Age")) %>%
   reshape2::acast(list("BroodYear", "Age"), value.var = "n", fill = 0)
 
+# Plot CWT data
+cwt_plot <- rbind(
+  cwt_esc %>% reshape2::melt() %>% mutate(type = "Escapement"),
+  cwt_pt %>% reshape2::melt() %>% mutate(type = "Preterminal catch"),
+  cwt_t %>% reshape2::melt() %>% mutate(type = "Terminal catch")
+) %>%
+  rename(BroodYear = Var1, Age = Var2, n = value) %>%
+  mutate(p = n/sum(n, na.rm = TRUE), .by = c(BroodYear, type))
 
+g <- cwt_plot %>%
+  filter(!is.na(p)) %>%
+  ggplot(aes(BroodYear, p, fill = factor(Age, levels = 5:2))) +
+  facet_wrap(vars(type), ncol = 1) +
+  geom_col(width = 1, colour = "grey40", linewidth = 0.1) +
+  scale_fill_brewer(palette = "Set2") +
+  labs(x = "Brood Year", y = "Proportion", fill = "Age", title = "Robertson Creek CWT") +
+  coord_cartesian(expand = FALSE)
+ggsave("figures/RBT_CWT_proportion.png", g, height = 6, width = 6)
+
+g2 <- g +
+  coord_cartesian(expand = FALSE, xlim = c(2013.5, 2020.5))
+ggsave("figures/RBT_CWT_prop2.png", g2, height = 4, width = 3)
+
+g <- cwt_plot %>%
+  filter(!is.na(p)) %>%
+  ggplot(aes(BroodYear, n, fill = factor(Age, levels = 5:2))) +
+  facet_wrap(vars(type), ncol = 1) +
+  geom_col(width = 1, colour = "grey40", linewidth = 0.1) +
+  scale_fill_brewer(palette = "Set2") +
+  labs(x = "Brood Year", y = "Catch", fill = "Age", title = "Robertson Creek CWT") +
+  coord_cartesian(expand = FALSE)
+ggsave("figures/RBT_CWT_catch.png", g, height = 6, width = 6)
+
+g2 <- g +
+  coord_cartesian(expand = FALSE, xlim = c(2013.5, 2020.5))
+ggsave("figures/CWT_esc_prop2.png", g2, height = 4, width = 6)
 
 # Data object for model
 Ldyr <- nrow(cwt_esc)
@@ -144,13 +167,13 @@ M_CTC <- -log(surv)
 fec_Sarita <- c(0, 1500, 3000, 3600, 4600)
 
 # Expansion factors for CWT
-cwt_dat %>%
-  mutate(EstimatedNumber = as.numeric(EstimatedNumber),
-         Exp = AdjustedEstimatedNumber/EstimatedNumber) %>%
-  select(EstimatedNumber, Exp, ExpansionFactor) %>%
-  filter(Exp < 2) %>%
-  pull(Exp) %>%
-  hist(breaks = 50)
+#cwt_dat %>%
+#  mutate(EstimatedNumber = as.numeric(EstimatedNumber),
+#         Exp = AdjustedEstimatedNumber/EstimatedNumber) %>%
+#  select(EstimatedNumber, Exp, ExpansionFactor) %>%
+#  filter(Exp < 2) %>%
+#  pull(Exp) %>%
+#  hist(breaks = 50)
 
 
 # Model assumption of catch expansion factor
@@ -213,9 +236,10 @@ start <- list(log_so = log(3 * max(d$obsescape)))
 fit <- fit_CM(d, start = start, map = map, do_fit = TRUE)
 #dat <- salmonMSE:::get_CMdata(fit)
 samp <- sample_CM(fit, chains = 3, cores = 3, iter = 10000, thin = 5)
-saveRDS(samp, file = "CM/Sarita_RBT_CM_09.08.25.rds")
+saveRDS(samp, file = "CM/Sarita_RBT_CM_10.03.25.rds")
 
-samp <- readRDS("CM/Sarita_RBT_CM_09.08.25.rds")
-salmonMSE::report_CM(samp, dir = "CM", filename = "Sarita_09.08", year = full_year$BroodYear, name = "Sarita (RBT CWT)")
+samp <- readRDS("CM/Sarita_RBT_CM_10.03.25.rds")
+salmonMSE::report_CM(samp, dir = "CM", filename = "Sarita_10.03",
+                     year = full_year$BroodYear, name = "Sarita (RBT CWT)")
 
 #shinystan::launch_shinystan(samp)
