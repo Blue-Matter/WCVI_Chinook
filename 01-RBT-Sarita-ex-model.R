@@ -9,21 +9,6 @@ esc <- readr::read_csv("data/R-OUT_infilled_indicators_escapement_timeseries.csv
   filter(river == "sarita_river") %>%
   arrange(year)
 
-# LGL estimates
-esc_lgl <- readr::read_csv("data/Sarita/SaritaCN_annualVAR.csv")
-
-g <- esc_lgl %>%
-  mutate(type = "LGL") %>%
-  ggplot(aes(Year, MedianEscapement, colour = type, fill = type)) +
-  geom_ribbon(aes(ymin = perc15, ymax = perc85), alpha = 0.5) +
-  geom_point() +
-  geom_line() +
-  geom_line(data = mutate(esc, type = "Res Doc"), aes(x = year, y = escapement)) +
-  expand_limits(y = 0) +
-  labs(y = "Sarita escapement", colour = NULL, fill = NULL) +
-  theme(legend.position = "bottom")
-ggsave("figures/Sarita_escapement_comparison.png", g, height = 4, width = 6)
-
 # Sarita hatchery releases and broodtake
 #rel <- readxl::read_excel(
 #  "data/Sarita/2025-02-04 Sarita Chinook Releases and Removals.xlsx",
