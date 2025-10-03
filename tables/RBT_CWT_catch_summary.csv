@@ -1,0 +1,110 @@
+fishery_type,country,ERA_fishery_name,Coarse_description,n_records,Catch
+terminal,Canada,TWCVI TERM N,Southwest WCVI Terminal Net,7755,32677
+terminal,Canada,TWCVI TERM S,WCVI Terminal Sport,2795,18264
+terminal,Canada,TWCVI FS,WCVI Freshwater Sport,47,261
+terminal,US,TPS FN,North Puget Sound Freshwater Net,13,55
+terminal,Canada,TWCVI TERM N,Northwest WCVI Terminal Net,11,37
+terminal,US,TAK TERM T,Alaska Terminal Troll,4,18
+terminal,Canada,TFRASER FS,Fraser Freshwater Sport,3,18
+terminal,US,TPS FN,Skagit Freshwater Net,5,15
+terminal,US,TWAC FN,Washington North Coast Freshwater Net,4,7
+terminal,Canada,TNORTH FS,North Freshwater Sport,1,5
+terminal,US,TCOL R N,Columbia Select Area Net,1,3
+terminal,US,TPS FN,Puget Sound Area 10-11-13 Freshwater Net,1,3
+terminal,Canada,TGS FS,North Georgia Strait Freshwater Sport,1,3
+terminal,US,TCOL R N,Columbia River Z1-5 Gillnet,1,2
+pre-terminal,Canada,NORTH T,North Summer Troll,2393,9813
+pre-terminal,US,AK JLO T,Alaska July North Outside Troll,2076,7015
+pre-terminal,US,ALASKA S,Alaska Southeast Sport,2836,5193
+pre-terminal,Canada,WCVI SUM T,Northwest Vancouver Island Summer Troll,1218,4847
+pre-terminal,Canada,CENTRL T,Central Troll,1361,4300
+pre-terminal,US,AK JNO T,Alaska June North Outside Troll,1530,3846
+pre-terminal,Canada,NBC AABM S,North AABM Sport (QCI),807,3724
+pre-terminal,Canada,WCVI ISBM S,WCVI ISBM Sport,544,3278
+pre-terminal,US,ALASKA N,Alaska District 103 & 104 Seine,644,3255
+pre-terminal,Canada,WCVI AABM S,WCVI AABM Sport,436,2773
+pre-terminal,US,AK FALL T,Alaska Fall North Outside Troll,829,2743
+pre-terminal,Canada,WCVI SUM T,Southwest Vancouver Island Summer Troll,471,2428
+pre-terminal,Canada,CBC S,Central Sport,394,2160
+pre-terminal,Canada,BC JF S,Canadian Juan De Fuca Sport,280,2150
+pre-terminal,US,AK JLO T,Alaska July South Outside Troll,731,2003
+pre-terminal,US,AK W/S T,Alaska Late Winter North Outside Troll,577,1694
+pre-terminal,US,AK W/S T,Alaska Spring North Outside Troll,708,1646
+pre-terminal,Canada,NORTH N,North Net,426,1517
+pre-terminal,Canada,NORTH T,North Spring Troll,392,1425
+pre-terminal,Canada,JNST S,Johnstone Strait Sport,232,1173
+pre-terminal,US,AK JNO T,Alaska June South Outside Troll,310,923
+pre-terminal,Canada,CENTRL N,Central Net,243,745
+pre-terminal,US,AK JLI T,Alaska July South Inside Troll,316,720
+pre-terminal,US,AK JLI T,Alaska July North Inside Troll,303,699
+pre-terminal,Canada,NBC ISBM S,North ISBM Sport,91,617
+pre-terminal,US,AK W/S T,Alaska Early Winter North Outside Troll,152,528
+pre-terminal,Canada,WCVI N,Southwest WCVI Net,142,524
+pre-terminal,Canada,JNST N,Johnstone Strait Net,144,524
+pre-terminal,US,AK JNI T,Alaska June North Inside Troll,247,454
+pre-terminal,US,AK JNI T,Alaska June South Inside Troll,230,451
+pre-terminal,US,AK FALL T,Alaska Fall South Outside Troll,144,438
+pre-terminal,US,AK W/S T,Alaska Late Winter South Inside Troll,176,385
+pre-terminal,US,AK W/S T,Alaska Spring South Outside Troll,247,381
+pre-terminal,US,ALASKA N,Alaska District 101 & 102 Seine,66,311
+pre-terminal,US,AK W/S T,Alaska Late Winter North Inside Troll,150,282
+pre-terminal,Canada,WCVI SPR T,Northwest Vancouver Island Spring Troll,78,282
+pre-terminal,Canada,BC JF N,Canadian Juan De Fuca Net,57,209
+pre-terminal,US,AK FALL T,Alaska Fall South Inside Troll,49,190
+pre-terminal,US,ALASKA N,Alaska District 113 Seine,33,180
+pre-terminal,US,AK W/S T,Alaska Spring North Inside Troll,87,161
+pre-terminal,Canada,GEO ST S,North Georgia Strait Sport,39,156
+pre-terminal,US,AK W/S T,Alaska Late Winter South Outside Troll,47,141
+pre-terminal,US,AK W/S T,Alaska Spring South Inside Troll,67,138
+pre-terminal,Canada,WCVI SPR T,Southwest Vancouver Island Spring Troll,32,138
+pre-terminal,Canada,GEO ST S,South Georgia Strait Sport,22,135
+pre-terminal,US,ALASKA N,Alaska District 101 And 102 Gillnet,55,116
+pre-terminal,US,AK FALL T,Alaska Fall North Inside Troll,33,112
+pre-terminal,US,AK W/S T,Alaska Early Winter North Inside Troll,46,103
+pre-terminal,US,PGSDN N,San Juans Net,29,86
+pre-terminal,US,ALASKA N,Alaska District 109 & 110 Seine,20,68
+pre-terminal,Canada,GEO ST T,Georgia Straight Troll,10,60
+pre-terminal,US,ALASKA N,Alaska District 105 106 & 107 Seine,24,55
+pre-terminal,US,ALASKA N,Alaska Southeast Other Gillnet,21,49
+pre-terminal,US,ALASKA N,Alaska District 112 Seine,17,47
+pre-terminal,Canada,NORTH T,North Winter Troll,12,47
+pre-terminal,Canada,WCVI F/W T,Southwest Vancouver Island Winter Troll,10,46
+pre-terminal,US,PGSDN S,Puget Sound Area 5 Sport,8,43
+pre-terminal,US,PGSDN S,Puget Sound Area 6 Sport,11,40
+pre-terminal,US,PGSDO N,Puget Sound Area 10-11-13 Net,11,35
+pre-terminal,Canada,WCVI F/W T,Northwest Vancouver Island Winter Troll,5,26
+pre-terminal,US,N FALCON S,Washington Area 4 Ocean Sport,7,23
+pre-terminal,US,US JF N,Washington Juan De Fuca Net,8,20
+pre-terminal,US,N FALCON T,Washington Area 4 (Neah Bay) Tribal Troll,10,19
+pre-terminal,US,PGSDO S,Puget Sound Area 10 Sport,4,18
+pre-terminal,US,PGSDO N,Puget Sound Area 6b-9 Net,1,17
+pre-terminal,US,AK W/S T,Alaska Early Winter South Inside Troll,6,15
+pre-terminal,US,AK FALL T,Alaska Summer CNR MSF North Outside Troll,4,13
+pre-terminal,US,ALASKA N,Alaska District 115 Gillnet,6,12
+pre-terminal,US,PGSDO N,Skagit Net,1,10
+pre-terminal,US,N FALCON T,Washington Area 3 (La Push) Non-tribal Troll,2,10
+pre-terminal,US,PGSDO S,Puget Sound Area 9 Sport,3,10
+pre-terminal,US,PGSDO N,Stillaguamish/Snohomish Net,3,8
+pre-terminal,US,N FALCON T,Washington Area 4 (Neah Bay) Non-tribal Troll,4,8
+pre-terminal,US,AK FALL T,Alaska Summer CNR MSF North Inside Troll,6,8
+pre-terminal,Canada,WCVI F/W T,Northwest Vancouver Island Fall Troll,2,7
+pre-terminal,US,ALASKA N,Alaska Southeast Set Gillnet,4,6
+pre-terminal,US,N FALCON S,Washington Area 2 Ocean Sport,2,5
+pre-terminal,Canada,FRASER N,Fraser Net,2,5
+pre-terminal,US,S FALCON T,California Troll,1,4
+pre-terminal,US,N FALCON S,Washington Area 3 Ocean Sport,2,4
+pre-terminal,US,N FALCON S,Washington Area 1 Ocean Sport,2,4
+pre-terminal,US,N FALCON T,Washington Area 2 (Westport) Non-tribal Troll,2,4
+pre-terminal,Canada,WCVI N,Northwest WCVI Net,1,4
+pre-terminal,US,ALASKA N,Alaska District 111 Seine,1,3
+pre-terminal,US,AK W/S T,Alaska Early Winter South Outside Troll,2,3
+pre-terminal,US,N FALCON S,Buoy 10 Sport,1,3
+pre-terminal,US,PGSDO N,Hood Canal (Area 12) Net,1,2
+pre-terminal,Canada,NORTH T,North Fall Troll,1,2
+pre-terminal,US,S FALCON T,Oregon Area 4 Troll,1,2
+pre-terminal,Canada,WCVI F/W T,Southwest Vancouver Island Fall Troll,1,1
+escapement,ESCAPEMENT,ESCAPEMENT,Escapement,2267,69618
+escapement,Canada,XCA ESC STRAY,Canadian Escapement Stray,78,344
+escapement,US,XUS ESC STRAY,US Escapement Stray,10,10
+escapement,escapement,ESCAPEMENT,Subsistence,2,2
+NA,NA,NA,NA,107,481

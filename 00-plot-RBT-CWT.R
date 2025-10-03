@@ -1,3 +1,5 @@
+
+#### Plot Robertson Creek CWT ----
 library(tidyverse)
 
 dat <- readr::read_csv("data/RBT_data_wfisheries.csv")
@@ -22,12 +24,19 @@ g <- rel %>%
   labs(x = "Brood Year", y = "CWT releases")
 ggsave("figures/rel.png", g, height = 3, width = 4)
 
-
+#### Identify sources of CWT
 # Preterminal = US and Canada
 # Terminal = Canada
 table(dat$fishery_type, dat$country)
 table(dat$fishery_type, dat$ERA_fishery_name)
 
+CWT_summary <- dat %>%
+  #filter(fishery_type == "terminal") %>%
+  summarise(n_records = n(),
+            Catch = sum(AdjustedEstimatedNumber) %>% round(),
+            .by = c(fishery_type, country, ERA_fishery_name, Coarse_description)) %>%
+  arrange(desc(fishery_type), desc(Catch))
+readr::write_csv(CWT_summary, "tables/RBT_CWT_catch_summary.csv")
 
 unique(dat$TagCode) %>% length()
 range(dat$ExpansionFactor %>% as.numeric(), na.rm = TRUE)
