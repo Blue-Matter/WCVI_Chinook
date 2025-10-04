@@ -94,11 +94,21 @@ g <- ggplot(cwt_rel_annual, aes(BroodYear, rel)) +
 
 # CWT escapement by brood year, age
 # Remove strays ----
-cwt_esc <- cwt_dat %>%
+cwt_esc1 <- cwt_dat %>%
   filter(fishery_type == "escapement", Coarse_description %in% c("Escapement", "Subsistence")) %>%
-  summarise(n = sum(AdjustedEstimatedNumber), .by = c(BroodYear, Age)) %>%
-  right_join(full_matrix, by = c("BroodYear", "Age")) %>%
-  reshape2::acast(list("BroodYear", "Age"), value.var = "n", fill = 0)
+  summarise(n = sum(AdjustedEstimatedNumber), .by = c(BroodYear, Age))
+
+# Assign x percent of Southern WCVI Terminal Net fishery to escapement
+# Sarita fish are less vulnerable to this fishery compared to RBT
+p_esc <- 0.25
+cwt_esc2 <- cwt_dat %>%
+  filter(fishery_type == "terminal", Coarse_description == "Southwest WCVI Terminal Net") %>%
+  summarise(n = sum(p_esc * AdjustedEstimatedNumber), .by = c(BroodYear, Age))
+
+cwt_esc <- rbind(cwt_esc1, cwt_esc2) %>%
+  summarise(n = sum(n), .by = c(BroodYear, Age)) %>%
+    right_join(full_matrix, by = c("BroodYear", "Age")) %>%
+    reshape2::acast(list("BroodYear", "Age"), value.var = "n", fill = 0)
 
 # Preterminal CWT
 cwt_pt <- cwt_dat %>%
@@ -108,9 +118,13 @@ cwt_pt <- cwt_dat %>%
   reshape2::acast(list("BroodYear", "Age"), value.var = "n", fill = 0)
 
 # Terminal CWT
+# Remove strays ----
+# Assign 100 - x percent of Southern WCVI Terminal Net fishery to escapement
+# Sarita fish are less vulnerable to this fishery compared to RBT
 cwt_t <- cwt_dat %>%
   filter(fishery_type == "terminal", grepl("TWCVI", ERA_fishery_name)) %>%
-  summarise(n = sum(AdjustedEstimatedNumber), .by = c(BroodYear, Age)) %>%
+  mutate(p_catch = ifelse(Coarse_description == "Southwest WCVI Terminal Net", 1, 1 - p_esc)) %>%
+  summarise(n = sum(p_catch * AdjustedEstimatedNumber), .by = c(BroodYear, Age)) %>%
   right_join(full_matrix, by = c("BroodYear", "Age")) %>%
   reshape2::acast(list("BroodYear", "Age"), value.var = "n", fill = 0)
 
@@ -131,7 +145,7 @@ g <- cwt_plot %>%
   scale_fill_brewer(palette = "Set2") +
   labs(x = "Brood Year", y = "Proportion", fill = "Age", title = "Robertson Creek CWT") +
   coord_cartesian(expand = FALSE)
-ggsave("figures/RBT_CWT_proportion.png", g, height = 6, width = 6)
+ggsave(paste0("figures/RBT_CWT_proportion_pesc", p_esc, ".png"), g, height = 6, width = 6)
 
 g2 <- g +
   coord_cartesian(expand = FALSE, xlim = c(2013.5, 2020.5))
@@ -145,7 +159,7 @@ g <- cwt_plot %>%
   scale_fill_brewer(palette = "Set2") +
   labs(x = "Brood Year", y = "Catch", fill = "Age", title = "Robertson Creek CWT") +
   coord_cartesian(expand = FALSE)
-ggsave("figures/RBT_CWT_catch.png", g, height = 6, width = 6)
+ggsave(paste0("figures/RBT_CWT_catch_pesc", p_esc, ".png"), g, height = 6, width = 6)
 
 g2 <- g +
   coord_cartesian(expand = FALSE, xlim = c(2013.5, 2020.5))
@@ -236,10 +250,10 @@ start <- list(log_so = log(3 * max(d$obsescape)))
 fit <- fit_CM(d, start = start, map = map, do_fit = TRUE)
 #dat <- salmonMSE:::get_CMdata(fit)
 samp <- sample_CM(fit, chains = 3, cores = 3, iter = 10000, thin = 5)
-saveRDS(samp, file = "CM/Sarita_RBT_CM_10.03.25.rds")
+saveRDS(samp, file = paste0("CM/Sarita_RBT_CM_10.03.25_pesc", p_esc, ".rds"))
 
 samp <- readRDS("CM/Sarita_RBT_CM_10.03.25.rds")
-salmonMSE::report_CM(samp, dir = "CM", filename = "Sarita_10.03",
+salmonMSE::report_CM(samp, dir = "CM", filename = paste0("Sarita_10.03_pesc", p_esc),
                      year = full_year$BroodYear, name = "Sarita (RBT CWT)")
 
 #shinystan::launch_shinystan(samp)
