@@ -100,7 +100,7 @@ cwt_esc1 <- cwt_dat %>%
 
 # Assign x percent of Southern WCVI Terminal Net fishery to escapement
 # Sarita fish are less vulnerable to this fishery compared to RBT
-p_esc <- 0.25
+p_esc <- 1
 cwt_esc2 <- cwt_dat %>%
   filter(fishery_type == "terminal", Coarse_description == "Southwest WCVI Terminal Net") %>%
   summarise(n = sum(p_esc * AdjustedEstimatedNumber), .by = c(BroodYear, Age))
@@ -123,7 +123,7 @@ cwt_pt <- cwt_dat %>%
 # Sarita fish are less vulnerable to this fishery compared to RBT
 cwt_t <- cwt_dat %>%
   filter(fishery_type == "terminal", grepl("TWCVI", ERA_fishery_name)) %>%
-  mutate(p_catch = ifelse(Coarse_description == "Southwest WCVI Terminal Net", 1, 1 - p_esc)) %>%
+  mutate(p_catch = ifelse(Coarse_description == "Southwest WCVI Terminal Net", 1 - p_esc, 1)) %>%
   summarise(n = sum(p_catch * AdjustedEstimatedNumber), .by = c(BroodYear, Age)) %>%
   right_join(full_matrix, by = c("BroodYear", "Age")) %>%
   reshape2::acast(list("BroodYear", "Age"), value.var = "n", fill = 0)
