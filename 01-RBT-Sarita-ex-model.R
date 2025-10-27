@@ -100,7 +100,7 @@ cwt_esc1 <- cwt_dat %>%
 
 # Assign x percent of Southern WCVI Terminal Net fishery to escapement
 # Sarita fish are less vulnerable to this fishery compared to RBT
-p_esc <- 1
+p_esc <- 0.75
 cwt_esc2 <- cwt_dat %>%
   filter(fishery_type == "terminal", Coarse_description == "Southwest WCVI Terminal Net") %>%
   summarise(n = sum(p_esc * AdjustedEstimatedNumber), .by = c(BroodYear, Age))
@@ -250,9 +250,10 @@ start <- list(log_so = log(3 * max(d$obsescape)))
 fit <- fit_CM(d, start = start, map = map, do_fit = TRUE)
 #dat <- salmonMSE:::get_CMdata(fit)
 samp <- sample_CM(fit, chains = 3, cores = 3, iter = 10000, thin = 5)
+#samp <- sample_CM(fit, chains = 2, cores = 2, iter = 10000, thin = 5)
 saveRDS(samp, file = paste0("CM/Sarita_RBT_CM_10.03.25_pesc", p_esc, ".rds"))
 
-samp <- readRDS("CM/Sarita_RBT_CM_10.03.25.rds")
+samp <- readRDS(paste0("CM/Sarita_RBT_CM_10.03.25_pesc", p_esc, ".rds"))
 salmonMSE::report_CM(samp, dir = "CM", filename = paste0("Sarita_10.03_pesc", p_esc),
                      year = full_year$BroodYear, name = "Sarita (RBT CWT)")
 

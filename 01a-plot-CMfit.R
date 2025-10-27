@@ -1,8 +1,9 @@
 
 # These plots are all available in the markdown report
+p_esc <- 0.75
 
 # Get MCMC values
-samp <- readRDS("CM/Sarita_RBT_CM_10.03.25_pesc1.rds")
+samp <- readRDS(paste0("CM/Sarita_RBT_CM_10.03.25_pesc", p_esc, ".rds"))
 report <- salmonMSE:::get_report(samp)
 
 # Get data
@@ -62,14 +63,15 @@ g <- salmonMSE:::CM_ER(report, type = "PT", year1 = 1979, at_age = TRUE) +
   facet_wrap(vars(Age), scales = "free_y") +
   geom_line(data = ctc, aes(y = preterminal_er), colour = "red") +
   guides(colour = guide_legend(title = "Model"))
-ggsave("figures/Sarita_ex_PT_CTC_pesc1.png", g, height = 4, width = 6)
+g$data %>% filter(Year %in% c(2013:2018), Age == "Age 5") %>% pull(`50%`) %>% mean()
+ggsave(paste0("figures/Sarita_ex_PT_CTC_pesc", p_esc, ".png"), g, height = 4, width = 6)
 
 g <- salmonMSE:::CM_ER(report, type = "T", year1 = 1979, at_age = TRUE) +
   facet_wrap(vars(Age), scales = "free_y") +
   geom_line(data = ctc, aes(y = terminal_er), colour = "red")
-ggsave("figures/Sarita_ex_T_CTC_pesc1.png", g, height = 4, width = 6)
-
 g$data %>% filter(Year %in% c(2013:2018), Age == "Age 5") %>% pull(`50%`) %>% mean()
+ggsave(paste0("figures/Sarita_ex_T_CTC_pesc", p_esc, ".png"), g, height = 4, width = 6)
+
 #g <- salmonMSE:::CM_ER(report, brood = FALSE, type = "all", year1 = 1979, at_age = FALSE)
 
 
@@ -93,28 +95,28 @@ full_year <- seq(1979, 2023)
 
 SAMtool::plot_composition(
   full_year,
-  obs = d$cwtesc,
-  fit = report_MPD$ebrood,
+  obs = d$cwtesc[, , 1],
+  fit = report_MPD$ebrood[, , 1],
   annual_yscale = 'raw'
 )
 
 SAMtool::plot_composition(
   full_year,
-  obs = d$cwtcatPT,
-  fit = report_MPD$cbroodPT,
+  obs = d$cwtcatPT[, , 1],
+  fit = report_MPD$cbroodPT[, , 1],
   annual_yscale = 'raw'
 )
 
 SAMtool::plot_composition(
   full_year,
-  obs = report_MPD$matt,
+  obs = report_MPD$matt[, , 1],
   annual_yscale = 'raw'
 )
 
 SAMtool::plot_composition(
   full_year,
-  obs = d$cwtcatT,
-  fit = report_MPD$cbroodT,
+  obs = d$cwtcatT[, , 1],
+  fit = report_MPD$cbroodT[, , 1],
   annual_yscale = 'raw'
 )
 

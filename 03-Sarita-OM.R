@@ -10,7 +10,7 @@ proyears <- 30
 n_g <- 2
 
 # Load exploitation rate model - Sarita (with Robertson CWT traditionals)
-ERM_Sarita <- readRDS("CM/Sarita_RBT_CM_09.08.25.rds")
+ERM_Sarita <- readRDS("CM/Sarita_RBT_CM_10.03.25_pesc0.75.rds")
 report_RBT <- salmonMSE:::get_report(ERM_Sarita) # Removes warmup and thinned samples
 
 # Take maturity average from the 6 most recent brood years (2013-2018)
@@ -82,7 +82,7 @@ Harvest <- new(
   type_PT = "u",
   type_T = "u",
   u_preterminal = 0.45,
-  u_terminal = 0.66,
+  u_terminal = 0.24,
   MSF_PT = FALSE,
   MSF_T = FALSE,
   release_mort = c(0.1, 0.1),
@@ -247,15 +247,28 @@ Historical <- new(
 fry_surv <- read.csv("data/Sarita/fry_surv.csv")
 fry_surv_year <- read.csv("data/Sarita/fry_surv_year.csv")
 
-#g <- ggplot(fry_surv, aes(x, median)) +
-#  geom_line() +
-#  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.5, colour = 'grey80')
+# Log-linear regression to reproduce Figure 3.7 of Brown et al. Res Doc
+if (FALSE) {
+  fit <- lm(log(y) ~ x, fry_surv_year)
+  xpred <- seq(0, 100)
+  ypred <- predict(fit, newdata = data.frame(x = xpred), se.fit = TRUE)
 
-#g <- ggplot(fry_surv_year, aes(year, x)) +
-#  geom_point() +
-#  geom_line() +
-#  expand_limits(y = 0) +
-#  labs(x = "Year", y = "Fry/spawner")
+  plot(y ~ x, fry_surv_year, ylim = c(0, 1250), xlim = c(0, 100))
+  lines(xpred, exp(ypred$fit))
+  lines(xpred, exp(ypred$fit - 1.96 * ypred$se.fit))
+  lines(xpred, exp(ypred$fit + 1.96 * ypred$se.fit))
+
+  g <- ggplot(fry_surv, aes(x, median)) +
+    geom_line() +
+    geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.5, colour = 'grey80')
+
+  g <- ggplot(fry_surv_year, aes(year, x)) +
+    geom_point() +
+    geom_line() +
+    expand_limits(y = 0) +
+    labs(x = "Year", y = "Fry/spawner")
+}
+
 
 # Average conditions 2017-2023 (x = environmental variable, y = fry/spawner)
 #mean(fry_surv_year$x)
@@ -325,6 +338,22 @@ SOM2 <- SOM
 SOM2@Habitat@fry_sdev <- fpe2
 saveRDS(SOM2, "SOM/SOM_highsurv.rds")
 
+# Scenario that samples the full range of egg-fry survival
+sim_surv_bootstrap <- lapply(1:nsim, function(i) {
+  env_series_bootstrap <- sample(fry_surv_year$x, size = proyears, replace = TRUE) %>%
+    round()
+  df <- get_eggfry_surv(env_series_bootstrap, seed = 3 * i, nsim = 1)
+  df$Simulation[] <- i
+  return(df)
+}) %>%
+  bind_rows()
+fpe_bootstrap <- reshape2::acast(sim_surv_bootstrap, list("Simulation", "year"), value.var = "fpe")
+
+matplot(t(fpe_bootstrap[1:3, ]), type = 'l', ylab = "Egg-fry survival", xlab = "Projection year", ylim = c(0, 1))
+SOM4 <- SOM
+SOM4@Habitat@fry_sdev <- fpe_bootstrap
+saveRDS(SOM4, "SOM/SOM_surv_bootstrap.rds")
+
 
 # Scenario with declining maturity and fecundity
 # Get posterior medians
@@ -345,13 +374,13 @@ matt_slope <- matt_med[seq(12, 40), ] %>%
   filter(is.finite(value)) %>%
   summarise(slope = lm(value ~ Year) %>% coef() %>% getElement(2), .by = Age)
 
-SOM3 <- SOM
+SOM4 <- SOM
 for (i in matt_slope$Age) {
   matt_i <- matrix(qlogis(SOM3@Bio@p_mature[, i, SOM@nyears]), SOM@nsim, SOM@proyears)
   for (y in 2:SOM@proyears) {
     matt_i[, y] <- matt_i[, 1] + matt_slope$slope[matt_slope$Age == i] * y
   }
-  SOM3@Bio@p_mature[, i, SOM@nyears + seq(1, SOM@proyears)] <- plogis(matt_i)
+  SOM4@Bio@p_mature[, i, SOM@nyears + seq(1, SOM@proyears)] <- plogis(matt_i)
 
   for (r in SOM3@Hatchery@n_r) {
 
@@ -359,7 +388,7 @@ for (i in matt_slope$Age) {
     for (y in 2:SOM@proyears) {
       matt_i[, y] <- matt_i[, 1] + matt_slope$slope[matt_slope$Age == i] * y
     }
-    SOM3@Hatchery@p_mature_HOS[, i, SOM@nyears + seq(1, SOM@proyears), r] <- plogis(matt_i)
+    SOM4@Hatchery@p_mature_HOS[, i, SOM@nyears + seq(1, SOM@proyears), r] <- plogis(matt_i)
   }
 
 }
@@ -374,9 +403,9 @@ for (a in 3:5) {
     byrow = TRUE
   )
 }
-SOM3@Bio@fec <- fec_decline
-SOM3@Hatchery@fec_brood <- fec_decline
-saveRDS(SOM3, "SOM/SOM_declinematfec.rds")
+SOM4@Bio@fec <- fec_decline
+SOM4@Hatchery@fec_brood <- fec_decline
+saveRDS(SOM4, "SOM/SOM_declinematfec.rds")
 
 
 if (FALSE) {

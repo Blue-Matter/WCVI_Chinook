@@ -50,7 +50,7 @@ g <- sapply(report, function(i) {
 ggsave("figures/Quinsam_CWT_esc_prop.png", g, height = 4, width = 4)
 
 # Compare maturity from Quinsam and RBT
-samp_RBT <- readRDS(file = "CM/Sarita_RBT_CM_09.08.25.rds")
+samp_RBT <- readRDS(file = "CM/Sarita_RBT_CM_10.03.25_pesc0.75.rds")
 report_RBT <- salmonMSE:::get_report(samp_RBT)
 
 g_RBT <- salmonMSE:::CM_maturity(report_RBT, d = salmonMSE:::get_CMdata(samp_RBT@.MISC$CMfit),
@@ -121,7 +121,7 @@ g <- reshape2::melt(matt_avg) %>%
   filter(Var1 %in% 2:4) %>%
   mutate(Age = paste("Age", Var1), `Release Strategy` = rs_names[Var2]) %>%
   ggplot(aes(Maturity, fill = `Release Strategy`, colour = `Release Strategy`)) +
-  facet_wrap(vars(Age), scales = "free_x") +
+  facet_wrap(vars(Age), ncol = 2, scales = "free") +
   geom_density(alpha = 0.25) +
   scale_colour_manual(values = col_pal) +
   scale_fill_manual(values = col_pal) +
