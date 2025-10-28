@@ -13,6 +13,6 @@ pWILD,Proportion wild spawners,Proportion (0-1),Ancillary
 Mean age,Average age of spawners,Years (between 2-5),Ancillary
 Brood,Number of natural and hatchery origin brood,Abundance (> 0),Ancillary
 ESSR catch,Total catch of hatchery origin escapement,Abundance (> 0),Ancillary
-Escapement,Escapement from the terminal fishery,Abundance (> 0),Ancillary
+Escapement,"Escapement from the terminal fishery, i.e., the in-river return",Abundance (> 0),Ancillary
 Egg,Egg production in the natural environment,Millions of eggs (> 0),Ancillary
 Releases,Total hatchery releases,Hundreds of thousands (> 0),Ancillary
