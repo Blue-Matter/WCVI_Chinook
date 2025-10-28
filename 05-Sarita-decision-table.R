@@ -180,7 +180,27 @@ df <- lapply(1:length(state_var), function(j) {
   left_join(select(gr, Scenario, Option, n), by = "n") %>%
   left_join(Option_name)
 readr::write_csv(df, file = "tables/Sarita_outcomes_sim_year.csv") # Save for Slick object
+rm(df)
 
+# Big data frame of state variables for each simulation and year (for salmonMSE app figure)
+state_var2 <- c("Egg_NOS", "Egg_HOS", "Smolt_Rel", "Smolt_HOS", "Smolt_HOS", "KPT_NOS", "KPT_HOS", "Return_NOS", "Return_HOS",
+                "KT_NOS", "KT_HOS",
+                "Escapement_NOS", "Escapement_HOS", "NOB", "HOB", "Catch", "NOS", "HOS")
+
+df <- lapply(1:length(state_var2), function(j) {
+  lapply(1:length(SMSE_list), function(i) {
+    .ts_fn(SMSE_list[[i]], var = state_var2[j], all_sims = TRUE) %>%
+      reshape2::melt() %>%
+      rename(Simulation = Var1, Year = Var2) %>%
+      mutate(variable = state_var2[j], n = gr$n[i])
+  }) %>%
+    bind_rows()
+}) %>%
+  bind_rows() %>%
+  left_join(select(gr, Scenario, Option, n), by = "n") %>%
+  left_join(Option_name)
+readr::write_csv(df, file = "tables/Sarita_outcomes_sim_year2.csv") # Save for Slick object
+rm(df)
 
 #### Run loop over each of 4 scenarios for performance metric tables ----
 pm_primary <- c("PNI", "Total Spawners", "P_250_NOS", "P_476_NOS", "P_250", "P_476", "P_1300")
