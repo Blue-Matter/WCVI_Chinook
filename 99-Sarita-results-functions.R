@@ -16,7 +16,7 @@
     } else if (var == "Escapement") {
       res <- apply(SMSE@Escapement_NOS[, s, , ] + SMSE@Escapement_HOS[, s, , ], c(1, 3), sum)
     } else if (var == "Catch") {
-      res <- SMSE@Misc$ESSR_catch
+      res <- SMSE@Misc$inriver_catch
     } else {
       res <- plot_statevar_ts(SMSE, var, figure = FALSE, quant = FALSE)
     }
@@ -102,7 +102,7 @@ plot_table <- function(df, padding = 0.52) {
   g
 }
 
-decision_table_grid <- function(x, title = "PNI") {
+decision_table_grid <- function(x, title = "PNI", ncol = 2, nrow = 2) {
 
   vars <- unique(x$Scenario)
 
@@ -119,12 +119,12 @@ decision_table_grid <- function(x, title = "PNI") {
     g
   })
 
-  g <- ggpubr::ggarrange(plotlist = glist, ncol = 2, nrow = 2)
+  g <- ggpubr::ggarrange(plotlist = glist, ncol = ncol, nrow = nrow)
   g
 }
 
 tradeoff_grid <- function(val_sim, xname = "Total Spawners", yname = "PNI", xlab = xname, ylab = yname,
-                          xlim = NULL, ylim = NULL) {
+                          xlim = NULL, ylim = NULL, ncol = 2, nrow = 2) {
   vars <- unique(val_sim$Scenario)
 
   glist <- lapply(1:length(vars), function(i) {
@@ -148,7 +148,7 @@ tradeoff_grid <- function(val_sim, xname = "Total Spawners", yname = "PNI", xlab
     g
 
   })
-  g <- ggpubr::ggarrange(plotlist = glist, ncol = 2, nrow = 2, legend = "bottom", common.legend = TRUE)
+  g <- ggpubr::ggarrange(plotlist = glist, ncol = ncol, nrow = nrow, legend = "bottom", common.legend = TRUE)
   g
 }
 

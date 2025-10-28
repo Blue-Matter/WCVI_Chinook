@@ -299,10 +299,17 @@ fpe <- reshape2::acast(sim_surv, list("Simulation", "year"), value.var = "fpe")
 #matplot(t(fps), typ = 'l')
 #matplot(t(fpe), typ = 'l')
 
-#png("figures/Sarita_envvar.png", height = 4, width = 6, res = 400, units = "in")
-#par(mar = c(5, 4, 1, 1))
-#matplot(t(fpe[1:3, ]), typ = 'l', ylab = "Egg-fry survival", xlab = "Projection  year", ylim = c(0, 0.15), lty = 1)
-#dev.off()
+if (FALSE) {
+
+  png("figures/Sarita_envvar.png", height = 4, width = 6, res = 400, units = "in")
+  par(mar = c(5, 4, 1, 1), mfrow = c(1, 1))
+  matplot(t(fpe[1:3, ]), typ = 'l', panel.first = grid(),
+          ylab = "Egg-fry survival",
+          xlab = "Projection year", ylim = c(0, 0.15), lty = 1)
+  dev.off()
+
+}
+
 
 Habitat <- new(
   "Habitat",
@@ -348,6 +355,26 @@ sim_surv_bootstrap <- lapply(1:nsim, function(i) {
 }) %>%
   bind_rows()
 fpe_bootstrap <- reshape2::acast(sim_surv_bootstrap, list("Simulation", "year"), value.var = "fpe")
+
+if (FALSE) {
+
+  png("figures/Sarita_envvar_bootstrap.png", height = 6, width = 5, res = 400, units = "in")
+
+  envvar <- reshape2::acast(sim_surv_bootstrap, list("Simulation", "year"), value.var = "x")
+
+  par(mar = c(5, 4, 1, 1), mfrow = c(2, 1))
+  matplot(t(envvar[1:3, ]), typ = 'l', ylab = "Environmental variable",
+          panel.first = grid(),
+          xlab = "Projection year", ylim = c(0, 100),
+          lty = 1)
+
+  matplot(t(fpe_bootstrap[1:3, ]), typ = 'l', ylab = "Egg-fry survival",
+          panel.first = grid(),
+          xlab = "Projection year", ylim = c(0, 1), lty = 1)
+
+  dev.off()
+
+}
 
 matplot(t(fpe_bootstrap[1:3, ]), type = 'l', ylab = "Egg-fry survival", xlab = "Projection year", ylim = c(0, 1))
 SOM4 <- SOM

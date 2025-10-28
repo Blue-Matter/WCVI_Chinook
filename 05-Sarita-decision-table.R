@@ -11,17 +11,18 @@ g_init <- expand.grid(
   ER = c(0.5, 0.75, 1),
   pNOB_target = c(0.5, 0.75, 1),
   ocean_ER_scalar = 1,
-  surv = c("avg", "high"),
+  surv = c("avg", "high", "bootstrap"),
   fec = "constant"
 )
 
 gr <- rbind(
   g_init %>%
-    mutate(Scenario = ifelse(surv == "avg", "A. Base (high ocean ER)", "B. High freshwater survival")),
+    mutate(Scenario = ifelse(surv == "avg", "A. Recent ocean ER",
+                             ifelse(surv == "high", "B. High freshwater survival", "C. Bootstrap freshwater survival"))),
   g_init %>% filter(surv == "avg") %>% mutate(ocean_ER_scalar = 0.75) %>%
-    mutate(Scenario = "C. Lower ocean ER"),
+    mutate(Scenario = "D. Lower ocean ER"),
   g_init %>% filter(surv == "avg") %>% mutate(ocean_ER_scalar = 0.75, fec = "decline") %>%
-    mutate(Scenario = "D. Lower ocean ER, decline mat & fec")
+    mutate(Scenario = "E. Decline mat & fec")
 ) %>%
   mutate(
     Option = paste0("ER = ", ER, ", pNOB = ", pNOB_target),
@@ -83,7 +84,7 @@ Esc <- sapply(SMSE_list, function(x) {
   rename(Simulation = Var1, Escapement = value, n = Var2)
 
 K <- sapply(SMSE_list, function(x) {
-  x@Misc$ESSR_catch[, y]
+  x@Misc$inriver_catch[, y]
 }) %>%
   reshape2::melt() %>%
   rename(Simulation = Var1, Catch = value, n = Var2)
@@ -415,36 +416,36 @@ g <- val_sim %>%
   filter(variable == "PNI") %>%
   select(Scenario, ER, pNOB_target, median) %>%
   rename(value = median) %>%
-  decision_table_grid()
-ggsave(file.path(dir_dt, "decisiontable_PNI.png"), g, width = 5, height = 5)
+  decision_table_grid(nrow = 3)
+ggsave(file.path(dir_dt, "decisiontable_PNI.png"), g, width = 5, height = 6.5)
 
 g <- val_sim %>%
   left_join(gr) %>%
   filter(variable == "Total Spawners") %>%
   select(Scenario, ER, pNOB_target, median) %>%
   mutate(value = round(median)) %>%
-  decision_table_grid("Total Spawners")
-ggsave(file.path(dir_dt, "decisiontable_sp.png"), g, width = 5, height = 5)
+  decision_table_grid("Total Spawners", nrow = 3)
+ggsave(file.path(dir_dt, "decisiontable_sp.png"), g, width = 5, height = 6.5)
 
 g <- val_sim %>%
   left_join(gr) %>%
   filter(variable == "Releases") %>%
   select(Scenario, ER, pNOB_target, median) %>%
   rename(value = median) %>%
-  decision_table_grid("Hatchery releases (100,000s)")
-ggsave(file.path(dir_dt, "decisiontable_rel.png"), g, width = 5, height = 5)
+  decision_table_grid("Hatchery releases (100,000s)", nrow = 3)
+ggsave(file.path(dir_dt, "decisiontable_rel.png"), g, width = 5, height = 6.5)
 
 g <- val_prob %>%
   left_join(gr) %>%
   filter(variable == "P_1300") %>%
   select(Scenario, ER, pNOB_target, value) %>%
-  decision_table_grid("P_1300")
-ggsave(file.path(dir_dt, "decisiontable_P_1300.png"), g, width = 5, height = 5)
+  decision_table_grid("P_1300", nrow = 3)
+ggsave(file.path(dir_dt, "decisiontable_P_1300.png"), g, width = 5, height = 6.5)
 
 
 g <- val_sim %>%
   left_join(gr) %>%
   #mutate(lwr = median, upr = median) %>%
-  tradeoff_grid(xlim = c(0, 3000), ylim = c(0, 1))
-ggsave(file.path(dir_dt, "tradeoff_PNI_sp.png"), g, width = 5, height = 5)
+  tradeoff_grid(xlim = c(0, 4000), ylim = c(0, 1), nrow = 3)
+ggsave(file.path(dir_dt, "tradeoff_PNI_sp.png"), g, width = 5, height = 6.5)
 

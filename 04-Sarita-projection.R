@@ -7,14 +7,14 @@ g_init <- expand.grid(
   ER = c(0.5, 0.75, 0.999),
   pNOB_target = c(0.5, 0.75, 0.99),
   ocean_ER_scalar = 1,
-  surv = c("avg", "high"),
+  surv = c("avg", "high", "bootstrap"),
   fec = "constant"
 )
 
 g <- rbind(
   g_init,
   g_init %>% filter(surv == "avg") %>% mutate(ocean_ER_scalar = 0.75),
-  g_init %>% filter(surv == "avg") %>% mutate(ocean_ER_scalar = 0.75, fec = "decline")
+  g_init %>% filter(surv == "avg") %>% mutate(ocean_ER_scalar = 1, fec = "decline")
 ) %>%
   mutate(n = 1:n())
 
@@ -85,12 +85,12 @@ f_catch <- function(NO, HO, m, targetER = 0.3, min_esc = 1300) {
 
 ### Start simulation
 library(snowfall)
-sfInit(TRUE, 0.25 * nOM)
+sfInit(TRUE, 9)
 
 sfExport(list = c("f_catch", "f_brood"))
 
 # Run in batches of 9
-for (j in 1:4) {
+for (j in 1:5) {
   runs <- 9 * (j - 1) + seq(1, 9)
   print(runs)
 
@@ -100,8 +100,10 @@ for (j in 1:4) {
 
     if (g$surv[i] == "avg") {
       SOM <- readRDS(file.path("SOM", "SOM_base.rds"))
-    } else {
+    } else if (g$surv[i] == "high") {
       SOM <- readRDS(file.path("SOM", "SOM_highsurv.rds"))
+    } else if (g$surv[i] == "bootstrap") {
+      SOM <- readRDS(file.path("SOM", "SOM_surv_bootstrap.rds"))
     }
 
     if (g$fec[i] == "decline") {
@@ -125,9 +127,9 @@ for (j in 1:4) {
 
     SMSE <- salmonMSE(SOM)
 
-    SMSE@Misc$ESSR_catch <- salmonMSE:::get_salmonMSE_var(salmonMSE_env$H, "HOS_remove")
-    SMSE@Misc$ER_ESSR <- SMSE@Misc$ESSR_catch/(apply(SMSE@Escapement_HOS[, 1, , 1:29], c(1, 3), sum) - SMSE@HOB[, 1, 1:29])
-    SMSE@Misc$ER_ESSR[is.na(SMSE@Misc$ER_ESSR)] <- 0
+    SMSE@Misc$inriver_catch <- salmonMSE:::get_salmonMSE_var(salmonMSE_env$H, "HOS_remove")
+    SMSE@Misc$ER_inriver <- SMSE@Misc$inriver_catch/(apply(SMSE@Escapement_HOS[, 1, , 1:29], c(1, 3), sum) - SMSE@HOB[, 1, 1:29])
+    SMSE@Misc$ER_inriver[is.na(SMSE@Misc$ER_inriver)] <- 0
 
     saveRDS(SMSE, file = file.path("SMSE", paste0("Sarita", i, ".rds")))
 
