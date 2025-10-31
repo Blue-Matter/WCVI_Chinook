@@ -2,6 +2,28 @@
 
 # Calculate decline in fecundity based on 5% reduction in mean size at age per decade
 
+# Plot data
+d <- readxl::read_excel(
+  file.path("data", "2023-11-07 R-OUT_Fecundity-Data_all-years.xlsx")
+) %>%
+  filter(!is.na(`Resolved Age GR`)) %>%
+  mutate(Age = substr(`Resolved Age GR`, 1, 1) |> as.integer(),
+         Year = as.integer(Year))
+
+g <- ggplot(d, aes(factor(Age), `Est Fecundity`)) +
+  geom_point() +
+  geom_violin() +
+  facet_wrap(vars(Site))
+
+g <- ggplot(d, aes(factor(Age), `Est Fecundity`)) +
+  geom_point() +
+  geom_violin() +
+  facet_grid(vars(Year), vars(Site))
+
+summarise(d, n = n()/3, m = mean(`Est Fecundity`), .by = c(Age, Site)) %>%
+  arrange(Site, Age)
+
+
 # Fecundity at length model
 fit <- readRDS("data/WCVI_hatchery_Chinook_fecundity_predictive_model.rds")
 summary(fit$`fecundity model`)
