@@ -395,7 +395,7 @@ for (i in 1:length(scenario_unique)) {
     ggtitle(scenario_unique[i])
   ggsave(paste0(dir, "performance_metrics.png"), g, width = 6, height = 7)
 
-  # Primary performance metrics (medians at end of the projection) ----
+  # Performance metrics (medians at end of the projection) ----
   d <- rbind(
     val_sim %>% select(Scenario, variable, median, scenario),
     val_prob %>% select(Scenario, variable, value, scenario) %>% rename(median = value)
@@ -403,28 +403,24 @@ for (i in 1:length(scenario_unique)) {
     filter(Scenario == scenario_unique[i]) %>%
     mutate(variable = factor(variable, c(pm_primary, pm_ancillary)))
 
-  #d <- val_sim %>%
-  #  filter(Scenario == scenario_unique[i]) %>%
-  #  select(scenario, variable, median)
-
   g <- plot_table(d) +
     geom_vline(xintercept = length(pm_primary) + 0.5, linewidth = 1, linetype = 2) +
     ggtitle(scenario_unique[i])
   ggsave(paste0(dir, "performance_table_full.png"), g, width = 7.5, height = 3)
-
-  # Probability (end of projection) ----
-  #d_prob <- val_prob %>%
-  #  rename(median = value) %>%
-  #  filter(Scenario == scenario_unique[i]) %>%
-  #  select(scenario, variable, median) %>%
-  #  mutate(variable = factor(variable),
-  #         scenario = factor(scenario, rev(Option_name$scenario)))
-
-  #g <- plot_table(d_prob) +
-  #  ggtitle(scenario_unique[i])
-  #ggsave(paste0(dir, "prob_table.png"), g, width = 5, height = 3.5)
-
 }
+
+# Full performance table all scenarios
+d <- rbind(
+  val_sim %>% select(Scenario, variable, median, scenario),
+  val_prob %>% select(Scenario, variable, value, scenario) %>% rename(median = value)
+) %>%
+  mutate(variable = factor(variable, c(pm_primary, pm_ancillary)))
+
+
+g <- plot_table(d) +
+  geom_vline(xintercept = length(pm_primary) + 0.5, linewidth = 1, linetype = 2) +
+  facet_wrap(vars(Scenario), ncol = 1)
+ggsave("figures/SMSE/performance_table_full.png", g, width = 7.5, height = 9)
 
 #### Decision table for all scenarios ----
 y <- 29

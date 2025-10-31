@@ -9,14 +9,13 @@ Natural survival (age 2+),"Age 2: 0.70, Age 3: 0.80, Age 4+: 0.90",Bio/Habitat/H
 Annual preterminal (juvenile) exploitation rate,0.45,Bio/Habitat/Harvest,Estimated from Robertson Creek CWT exploitation rate model (2013-2018 average)
 Preterminal vulnerability,"Stochastic with means at Age 2: 0.004, Age 3: 0.12, Age 4: 0.64, Age 5: 1.00",Bio/Habitat/Harvest,Estimated from Robertson Creek CWT exploitation rate model (2013-2018 average)
 Maturity (identical for both natural origin groups),"Stochastic with means at Age 2: 0.005, Age 3: 0.16, Age 4: 0.59, Age 5: 1.00",Bio/Habitat/Harvest,Estimated from Robertson Creek CWT exploitation rate model (2013-2018 average)
-Annual terminal (mature) exploitation rate,0.66,Bio/Habitat/Harvest,Estimated from Robertson Creek CWT exploitation rate model (2013-2018 average)
+Annual terminal (mature) exploitation rate,0.24,Bio/Habitat/Harvest,Estimated from Robertson Creek CWT exploitation rate model (2013-2018 average)
 Terminal fishery vulnerability,"Stochastic with means at Age 2: 0.14, Age 3: 64, Age 4: 0.95, Age 5: 1.00",Bio/Habitat/Harvest,Estimated from Robertson Creek CWT exploitation rate model
 En-route survival of escapement to spawning ground,1,Bio/Habitat/Harvest,Simplest assumption used
 In-river fishery exploitation rate (mark-selective),"0.5, 0.75, 1",Bio/Habitat/Harvest,Alternative scenarios evaluated here
 Release mortality of unmarked fish,0,Bio/Habitat/Harvest,Simplest assumption used
 Release strategy,"500,000 (335k fed fry, 165k traditionals)",Hatchery,Current SEP target
 pNOB target,"0.50, 0.75, or 1.00",Hatchery,Alternative scenarios evaluated here
-Maximum natural brood-escapement ratio,0.5,Hatchery,Current SEP guidance
 Brood survival in hatchery,0.85,Hatchery,"M. Thom (DFO SEP, pers. comm.)"
 Mark rate,1,Hatchery,Current SEP target
 Outmigration survival of hatchery releases,0.9,Hatchery,"@brown2025, Table 3.3"

@@ -5,13 +5,13 @@ Science is in need of quantitative tools to evaluate and compare the performance
 There are 3 principal levers available to manage salmon populations (harvest regulation, hatchery enhancement, habitat restoration), but their impacts on populations is often uncertain, and they can entail risks. 
 For example, within harvest regulations, there can be risks from mixed-stock fisheries on non-targeted weak stocks.
 Hatchery supplementation are often used as a conservation tool to support weak stocks, but there are genetic risks from hatchery introgression that can reduce fitness and reproductive success of populations.
-Habitat restoration is an accessible and widely adopted tool for salmon conservation, but the value of habitat restoration relative to harvest regulation and hatchery enhancement is often uncertain, especially if the relationship between the restoration action and the change in survival at various life stages has not been established.
+Habitat restoration is an accessible and widely adopted tool for salmon conservation, but the value of habitat restoration relative to harvest regulation and hatchery enhancement is often not quantified, especially if the relationship between the restoration action and the change in survival at various life stages has not been established.
 
 Currently, there are various tools that support salmon management. For example, samSim supports evaluation of alternative harvest policies, while AHA supports evaluation of hatchery production levels. 
 However, these tools are insufficiently comprehensive to support a risk-based approach, and may not incorporate the full complexity of the system dynamics. 
-For example, AHA does not incorporate evaluation of multiple release strategies, sub-cohorts of hatchery origin fish that may mature and survive at different rates, and does not incorporate full stochasticity in biological and fitness dynamics.
+For example, AHA does not incorporate evaluation of multiple release strategies, sub-cohorts of hatchery origin fish released at different sizes that mature and survive at different rates, and does not incorporate full stochasticity to encompass the range of uncertainty in biological and fitness dynamics.
 
-We present a tool, salmonMSE, as a comprehensive tool to provide a risk-based approach for prioritizing management levers. 
+We present salmonMSE, a comprehensive decision support tool to provide a risk-based approach for prioritizing management levers. 
 salmonMSE is intended to expand upon the current suite of tools to simulate complex system dynamics to support decision making.
 
 Here, we present a case study to demonstrate the application of salmonMSE to Sarita River Chinook.

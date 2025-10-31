@@ -18,9 +18,19 @@ First, CWT data informs natural mortality, year-specific maturity, and exploitat
 
 Second, these parameters are then applied to the system of interest and informs the size and productivity of the population that has a time series of total escapement. The number of hatchery releases in the system informs hatchery production, and the difference in total escapement and hatchery production informs natural production. Both steps are accomplished within a single model fit, which can account for uncertainty among the various data components, and posterior distributions of parameters are obtained by MCMC.
 
-For the salmonMSE modeling, we primarily used the Robertson exploitation rate model to inform maturity (for traditionals), fishery vulnerability at age (assumed identical for all release strategies and life cycle groups), as well the relative abundance of hatchery and natural spawners for Sarita Chinook. 
+For the salmonMSE modeling, we primarily used the Robertson exploitation rate model (ERM) to inform maturity (for traditionals), fishery vulnerability at age (assumed identical for all release strategies and life cycle groups), as well the relative abundance of hatchery and natural spawners for Sarita Chinook.
 
 For both the salmonMSE operating model and exploitation rate estimation model, natural mortality at age 2--5 was fixed to values used in @ctc2023. While the age 1 natural mortality value was estimated in the Robertson ER model, values from the life cycle table were used in the operating model to illustrate differences among life cycle groups.
+
+The Robertson ERM uses CWT data from the Robertson (RBT) Creek hatchery. It is likely that preterminal exploitation, in commercial troll and sport fisheries in Alaska and the BC coast in the summer, is similar between RBT and Sarita Chinook (Figure \@ref(fig:sarita-pt)).
+
+On the other hand, terminal exploitation is likely to be lower for Sarita Chinook as they are less vulnerable to commercial net fishery near Port Alberni, because it is upstream of the Sarita River. 
+Therefore, the ERM was updated such that only 25% of the CWT terminal net fishery catch was assigned as catch, and the remaining 75% assigned as escapement based on presumed relative vulnerability between the two populations of Chinook (N. Brown, DFO pers. comm.).
+Accordingly, lower terminal exploitation rates are estimated for Sarita compared to RBT (Figure \@ref(fig:sarita-t)).
+
+
+
+\clearpage
 
 ```{r sarita-mat, fig.cap="Estimates of maturity at age for Sarita Chinook using Robertson Creek CWT as the indicator stock. Estimates after 2018 are uncertain because brood years have not completed their life cycle."}
 knitr::include_graphics(here::here("figures/Sarita_maturity_summary.png"))
@@ -30,16 +40,16 @@ knitr::include_graphics(here::here("figures/Sarita_maturity_summary.png"))
 knitr::include_graphics(here::here("figures/Sarita_spawners.png"))
 ```
 
-(ref:fig-sarita-pt) Preterminal ocean fishery exploitation rate by age from the ERM (black). Lines in red are values from @ctc2023.
+(ref:fig-sarita-pt) Preterminal marine fishery exploitation rate by age from the Robertson ERM (black). Lines in red are values from @ctc2023.
 
 ```{r sarita-pt, fig.cap="(ref:fig-sarita-pt)"}
-knitr::include_graphics(here::here("figures/Sarita_ex_PT_CTC.png"))
+knitr::include_graphics(here::here("figures/Sarita_ex_PT_CTC_pesc0.75.png"))
 ```
 
-(ref:fig-sarita-t) Terminal ocean fishery exploitation rate by age from the ERM (black). Lines in red are values from @ctc2023.
+(ref:fig-sarita-t) Terminal marine fishery exploitation rate by age from the Robertson ERM, adjusted for lower vulnerability of Sarita Chinook (black). Lines in red are values from @ctc2023.
 
 ```{r sarita-t, fig.cap="(ref:fig-sarita-t)"}
-knitr::include_graphics(here::here("figures/Sarita_ex_T_CTC.png"))
+knitr::include_graphics(here::here("figures/Sarita_ex_T_CTC_pesc0.75.png"))
 ```
 
 # QUINSAM CWT EXPLOITATION RATE MODEL (ERM) {#app:quinsam-cwt}

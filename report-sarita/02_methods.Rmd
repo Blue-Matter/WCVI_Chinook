@@ -10,13 +10,13 @@ The objectives of the case study are to:
 
 ## salmonMSE operating model {#sec:om}
 
-The operating model is stochastic and age-structured. Individual scenarios are projected forward in time from a specified starting abundance.
+The operating model is stochastic and age-structured.
+Individual scenarios can be projected forward in time to understand the effect of a particular management strategy on the long-term dynamics of the population.
+One hundred simulations were used per scenario, with a projection period of 30 years.
+For each scenario, a variety of management strategies pertaining to the broodtake and in-river harvest are evaluated and compared.
 
-The configuration of the operating model is presented below and organized by life cycle.
+The configuration of the operating model is presented below and organized by life cycle stage.
 Sources for the parameters include @ctc2023, @brown2025, as well as the exploitation rate models fitted to various CWT datasets (Appendices \@ref(app:sarita-cwt) and \@ref(app:quinsam-cwt)).
-
-The description below represents the base model, from which subsequent alterations are made.
-One hundred simulations were used per scenario, with a projection period of 30 years. 
 
 Summary tables of parameters are presented in Tables \@ref(tab:sarita-om-bio) -- \@ref(tab:sarita-om-fitness).
 
@@ -26,22 +26,35 @@ The egg production is calculated from the number of natural origin and hatchery 
 
 No fish are mature at age 1.
 
-The fecundity at age 2 was set to half of the value of age 3. Most if not all age 2 spawners are precocious males. 
-These spawners can ensure genetic diversity by breeding across brood years. 
-Since this is not a sex-specific model, some assumption of fecundity value is needed in order to carry over breeding success for age 2 spawners. Calculations involving spawner composition, including pWILD, PNI, and pHOS are weighted by age class fecundity.
+The fecundity at age 2 was set to half of the value of age 3. 
+Most if not all age 2 spawners are precocious males. 
+Nevertheless, some assumption of fecundity is needed in order to carry over breeding success for age 2 spawners, as they can ensure genetic diversity by breeding across brood years.
+Calculations involving spawner composition, including pWILD, PNI, and pHOS are weighted by age class fecundity.
 
 Older age classes more predominantly female, where the proportion female is 0.01 at age 2, 0.1 at age 3, 0.55 at age 4, and 0.8 at age 5 [@brown2025].
 
-A typical value of 0.8 was used for the relative reproductive success of hatchery spawners [@withler2018].
+A typical value of 0.8 was used for the relative reproductive success of hatchery origin spawners [@withler2018].
 
 ### Natural production of juveniles
 
+#### Egg-fry survival 
+
 Egg-fry survival in the natural environment is modeled as a stochastic density-independent parameter, informed by an environment relationship where the fry/adult is predicted from the previous autumn (Figure \@ref(fig:env)).
 
-For the projection, average historical conditions during 2017--2023 were assumed, corresponding to 60% of days when the mean daily discharge exceeded 5 cubic meters per second, the threshold where there is sufficient freshwater flow to allow spawners to reach suitable spawning habitat.
+Three egg-fry survival scenarios were evaluated. To obtain these values, an assumption about the environmental variable is assumed and then stochastically converted to a survival term for the projection.
+
+In the first scenario (A), average historical conditions during 2017--2023 were assumed, corresponding to 60% of days when the mean daily discharge exceeded 5 cubic meters per second in October, the threshold where there is sufficient freshwater flow to allow spawners to reach suitable spawning habitat.
 The fry/spawner values were then simulated from a lognormal distribution with the mean and standard deviation obtained in Figure \@ref(fig:env).
 
-The egg-fry survival is converted from fry/spawner assuming an average fecundity of 3,900 and a proportion female of 0.4 (Figure \@ref(fig:fry-surv)). The mean survival is 0.09 with standard deviation of 0.21.
+The egg-fry survival is converted from fry/spawner assuming an average fecundity of 3,900 and a proportion female of 0.4 (Figure \@ref(fig:fry-surv)). The mean survival is 0.09 with lognormal standard deviation of 0.21.
+
+In scenario B, a higher than average freshwater flow in October is used, corresponding to the environmental variable of 0.8, proportion of October days with high freshwater discharge, corresponding to mean survival of 0.24, with lognormal standard deviation of 0.21. 
+
+Both scenarios A and B assume constant environmental conditions. A third scenario (C) simulated the full range of freshwater conditions by bootstrapping the environmental variable during 2017--2013 and stochastically converting using the regression relationship. This results in a broader range of survival over which to evaluate our management strategies (Figure \@ref(fig:fry-surv2)). The average survival in scenario C is 0.14, which is higher than in scenario A due to the non-linear relationship between water discharge and survival. Good environmental conditions have much higher survival that can compensate for poor years.
+
+**We may want to remove scenario A to simplify the results** 
+
+#### Outmigration
 
 The resulting fry are then divided by life cycle group, which will have different survival rates in age 1, the first year of the marine life stage after outmigration (described in Section \@ref(sec:marine-life-stage)). 
 95 percent of the fry as assigned as early-smalls and the rest are late-larges.
@@ -58,16 +71,23 @@ knitr::include_graphics(here::here("figures/Sarita-fry-survival.png"))
 knitr::include_graphics(here::here("figures/Sarita_envvar.png"))
 ```
 
+(ref:fig-fry-surv2) Top: The environmental variable sampled for the projection by bootstrapping historical values . Bottom: the corresponding egg-fry survival by converting the environmental variable using the regression in Figure \@ref(fig:env), with stochasticity using the residual standard deviation.
+
+```{r fry-surv2, fig.cap="(ref:fig-fry-surv2)"}
+knitr::include_graphics(here::here("figures/Sarita_envvar_bootstrap.png"))
+```
+
 ### Hatchery production of juveniles
 
-Target hatchery releases, by release strategy, are specified by the user. The releases in 2023 with 292,853 fed fry and 288,745 traditionals were used as the annual target. 
-We evaluate hatchery production strategy of 500,000 annual releases with a 50-50 distribution of fed fry and traditionals.
+Target hatchery releases, by release strategy, are specified by the user. 
+We evaluate hatchery production strategy of 500,000 annual releases with a distribution of 335 thousand fed fry and 165 thousand traditionals.
+In comparison, the releases in 2023 were 292,853 fed fry and 288,745 traditionals (total of 581,598). 
 
 Release strategies differ in maturity rates, described in Section \@ref(sec:maturity).
 
 The mark rate is assumed to be 1.
 
-The mortality rate is 10 percent shortly after release. 
+The mortality rate is 10 percent in hatchery prior to release. 
 Hatchery releases spend little time in the freshwater environment and immediately enter the marine life stage.
 
 ### Marine life stage and preterminal fishery {#sec:marine-life-stage}
@@ -75,16 +95,16 @@ Hatchery releases spend little time in the freshwater environment and immediatel
 The juvenile marine life stage is represented in the model through a matrix that indexes semestral age and time (2 semesters equals one year). 
 
 In the first half of the year, juveniles are vulnerable to the preterminal fishery. 
-A constant, annual harvest rate of 0.45 was used. This value is the 2013-2018 mean estimated in the Sarita ERM (Appendix \@ref(app:sarita-cwt)).
-Only the oldest age class experiences the full harvest rate. 
-Younger age classes experience partial exploitation based on the relative vulnerability.
+A constant, annual harvest rate of 0.45 was used. This value is the 2013-2018 mean estimated in the Sarita exploitation rate model (ERM, Appendix \@ref(app:sarita-cwt)).
+Only the oldest age class experiences the full harvest rate, while younger age classes experience lower exploitation rates based on the relative vulnerability.
 The vulnerability was estimated in the Sarita ERM and was stochastically sampled from the posterior distribution to create the operating model (Appendix \@ref(app:sarita-cwt)).
-It is assumed that the vulnerability schedule is identical for all release strategies and life cycle groups (Figure \@ref(fig:mat-vul)).
+The vulnerability schedule at age is identical for all release strategies and life cycle groups (Figure \@ref(fig:mat-vul)).
 
 In the second half of the year, mature fish are removed from the juvenile abundance matrix, and the remaining juveniles experience natural mortality. 
-The natural survival at age 1 natural mortality from obtained from the life cycle model [Table 3.3 of @brown2025], with 96.9% mortality for both hatchery release strategies. For natural origin fish, age-1 natural mortality is 99.6% for early smalls and 95% for late larges. 
-
-For older fish, the natural mortality is 30% at age 2, 20% at age 3, 10% at age 4 and older, as used in @ctc2023.
+The natural survival at age 1 natural mortality from obtained from the life cycle model [Table 3.3 of @brown2025], with 96.9% mortality for both hatchery release strategies. 
+For natural origin fish, age-1 natural mortality is 99.6% for early smalls and 95% for late larges. 
+For hatchery origin juveniles, age-1 mortality is 96.9%.
+For all older fish, the natural mortality is 30% at age 2, 20% at age 3, 10% at age 4 and older, as used in @ctc2023.
 
 ### Maturity and terminal exploitation {#sec:maturity}
 
@@ -100,10 +120,10 @@ For the operating model, the maturity was stochastically sampled from the poster
 
 It is assumed that both natural-origin life cycle groups (early-smalls and late-larges) have the maturity schedule of fed fry.
 
-In the operating model, the age structure of the return is represented separately from the juveniles. 
-The return are only present in the second half of the year and are vulnerable to the terminal fishery.
+The age structure of the return is represented separately from the juveniles. 
+The return are only present in the second half of the year and are vulnerable to the terminal marine fishery.
 The relative vulnerability by age class was stochastically sampled from the posterior distribution in the Sarita ERM (Appendix \@ref(app:sarita-cwt)) and assumed to be identical for all release strategies and life cycle groups (Figure \@ref(fig:mat-vul)).
-A constant, annual harvest rate of 0.66 was used. This value is the 2013-2018 mean estimated in the Sarita ERM (Appendix \@ref(app:sarita-cwt)).
+A constant, annual harvest rate of 0.24 was used. This value is the 2013-2018 mean estimated in the Sarita ERM (Appendix \@ref(app:sarita-cwt)).
 
 ```{r mat-vul, out.width="4in", fig.cap="Maturity by hatchery release strategy and fishery vulnerability at age (identical for all fish) in the operating model. Brood-year maturity for traditionals was estimated from Robertson CWT and the average taken during 2013-2018. For fed fry, maturity was derived from analysis of Quinsam CWT. Natural-origin fish have the same maturity as fed fry."}
 knitr::include_graphics(here::here("figures/SMSE/maturity_vul.png"))
@@ -111,37 +131,42 @@ knitr::include_graphics(here::here("figures/SMSE/maturity_vul.png"))
 
 ### Escapement
 
-After the terminal fishery, the escapement is represented in a third matrix.
+After the terminal fishery, the escapement, i.e., the in-river return, is represented in a third matrix.
 The survival of the escapement en-route to spawning grounds is one.
 
-Each year, an additional 100 hatchery strays, external to the system, also return.
+**Currently we're not using strays in the results but could be added back to the final model runs**
+Each year, an additional 100 hatchery strays, external to the system, also return. 
 It is assumed that they are unmarked.
 The age proportion of strays correspond to values observed in the Sarita CWT for traditionals in 2018, assuming it is representative of strays from adjacent systems (11 percent at age 2, 16% at age 3, 69% at age 4, and 4% at age 5).
 
-The mark-selective ESSR fishery is represented as part of removals for hatchery origin brood.
-The annual exploitation rate is specified as the proportion of the hatchery origin escapement that does not go to the spawning ground.
-Three alternative ESSR exploitation rates are explored: 0.5, 0.75, and 1.
-Natural-origin fish experience no additional mortality from the ESSR fishery.
-
 ### Brood
 
-The number of hatchery origin spawners (HOS) is the remaining fish after ESSR removals.
-The number of natural origin spawners (NOS) is the remaining fish after additional broodtake.
+The analysis evaluates the proposed rule which obtains the brood according to this algorithm:
 
-100 percent of the total escapement can be used as broodtake.
-All hatchery origin escapement that is not taken as brood or as ESSR catch continue to spawn.
+1. Brood is only collected when total escapement exceeds 600
+2. Total brood can’t exceed 33% of total escapement
+3. Total brood can’t exceed 200% of natural origin escapement
+4. Natural origin broodtake (NOB) is either 50% of natural origin escapement, (2), or (3), whichever is smallest
+5. Hatchery origin broodtake (HOB) is used to reach brood capacity, or until pNOB target is met
+6. Proportionally reduce brood (both NOB and HOB) to prevent exceeding the hatchery release target (calculated from brood fecundity and survival in hatchery)
 
-The broodtake is calculated as the number of spawners required to achieve the target egg production (target releases divided by 85 percent broodtake survival in the hatchery). 
-The ratio of unmarked and marked broodtake is taken to reach the target pNOB.
-Three target values were explored: 0.5, 0.75, and 1.
-
-Several constraints are placed on the broodtake such that the target pNOB or target egg production may not be realized.
-A limit of 50 percent of the natural origin escapement is used as brood to ensure there are sufficient numbers of NOS.
-Once that limit is reached, the remaining deficit in hatchery egg production is filled with hatchery origin brood.
-The total available hatchery brood is the number from the ESSR fishery.
+Three pNOB target values were explored: 0.5, 0.75, and 1.
 The age proportions of the brood is proportional to the underlying population, i.e., no preferential broodtake by age class.
 
+### In-river fishery
+
+After broodtake, in-river harvest occurs based on the following rule:
+
+1. Harvest proceeds only if total spawners (the difference between escapement and brood) exceeds 1,300
+2. The 1300 spawners includes all natural origin fish, and any hatchery-origin fish needed to reach the 1,300 threshold
+3. Excess hatchery origin fish are available to in-river fishery
+
+The harvest of excess HO fish is evaluated with three exploitation rates: 0.5, 0.75, and 1.
+Natural-origin fish experience no additional mortality from in-river harvest.
+
 ### Fitness
+
+**Text left here, we have fitness calculations but are currently not using them to evaluate the results**
 
 Hatchery-origin spawners can alter the evolutionary fitness of the spawning population in the natural environment. 
 The quantitative genetics component of the model calculates fitness of each brood year based on the parental origin [@ford2002].
@@ -201,28 +226,22 @@ csasdown::csas_table(
   kableExtra::column_spec(2, width = "3in")
 ```
 
-## Management options
+## Management strategies
 
-A reference grid was developed from a factorial combination of three in-river exploitation rate targets (0.5, 0.75, and 1) and three target pNOB values (0.5, 0.75, and 1.00) in a factorial combination, leading to nine (9) scenarios.
+Nine management options were evaluated from a factorial combination of three in-river exploitation rate targets (0.5, 0.75, and 1) and three target pNOB values (0.5, 0.75, and 1.00).
 
-Additional sensitivity scenarios include:
+## Operating model scenarios
 
-10. 90% Traditionals - 10% Fed Fry Release Strategy with 500,000 annual releases
-11. 90% Fed Fry - 10% Traditionals Release Strategy with 500,000 annual releases
-12. High survival (fry/spawner). Assume mean environmental variable with 80% days in October with high daily discharge (compared to 60%), i.e., wetter autumns which may allow eggs to survival to increase as a larger proportion are in suitable freshwater habitat. This results in an average egg-fry survival of 0.18.
-13. Density-dependence. Currently no density-dependence is in the reference grid, this additional scenario adds a capacity of 1300 spawners. A hockey-stick relationship is used where the number of spawners is equal to the escapment until the capacity is reached (Figure \@ref(fig:prespawn)). 
-14. Declining maturity and fecundity. The Sarita ERM estimates declining maturity (earlier age of maturity) in recent decades. The reference grid uses a recent mean, but this scenario uses the trend during 1990--2018 and continues the trend into the projection (Figure \@ref(fig:mat-trend)). Fecundity at age decreased during the projection (Figure \@ref(fig:fec-trend)). A 5 percent reduction in size at age per decade was used, and the corresponding fecundity was calculated from the fecundity-at-length model in @brown2025.
+The nine management options were evaluated against five scenarios describing alternative population dynamics.
 
-Sensitivity scenarios use the ESSR exploitation rate of 0.5 and pNOB target of 0.5.
+A. Recent ocean exploitation rates with freshwater survival centred around average historical autumn freshwater conditions
+A. Same as A with freshwater survival centred around above average historical autumn freshwater conditions
+A. Same as A with freshwater survival sampled stochastically from bootstrapping historical autumn freshwater conditions
+A. Same as A with 25% lower ocean exploitation rates from both the preterminal and terminal fisheries
+A. Same as A with declining maturity and fecundity. The Sarita ERM estimates declining maturity (earlier age of maturity) in recent decades. The other scenarios uses a recent mean, but this scenario uses the trend during 1990--2018 and continues the trend into the projection (Figure \@ref(fig:mat-trend)). Fecundity at age decreased during the projection (Figure \@ref(fig:fec-trend)). A 5 percent reduction in size at age per decade was used, and the corresponding fecundity was calculated from the fecundity-at-length model in @brown2025.
 
 From the initial abundance estimated in the Sarita ERM at the end of the conditioning period, the population is projected forward for 30 years.
 For each scenario, 100 simulation replicates were used to accommodate stochastic parameters.
-
-(ref:fig-prespawn) Schematic function of density-dependent spawner capacity in the sensitivity scenario. A capacity of 1300 spawners is used based on the value of $S_\textrm{rep}$ from @brown2025. A hockey-stick function is used to allow pre-spawn survival of one until the capacity is reached.
-
-```{r prespawn, fig.cap="(ref:fig-prespawn)"}
-knitr::include_graphics(here::here("figures/SMSE/prespawn_mortality.png"))
-```
 
 (ref:fig-mat-trend) Brood year maturity at age for the traditional release strategy. Historical values prior to 2023 are estimated from the Robertson Creek CWT in the exploitation rate model (ERM). Values between 2019-2023 are not well estimated as complete brood years were not observed in the data. Top: projected values are constant over time using the average over 2013--2018. Bottom: Declining maturity (earlier maturity) where the trend was estimated from the slope of values during 1990--2018 and used to extrapolate into the projection.
 
@@ -261,7 +280,7 @@ First, there can be differences in the age distribution of hatchery and natural 
 - **Mean age of spawners** used as an indicator for the presence of older spawners
 - **Brood** number of natural and hatchery origin brood used to validate whether the modeled size of the hatchery based on release targets is similar in size to the current hatchery
 - **Catch** size of the in-river harvest
-- **Escapement** mature fish returning after vulnerability to the terminal fishery
+- **Escapement**, the in-river return of mature fish after vulnerability to the terminal fishery
 - **Egg** production in the natural environment from NOS and HOS, where trends may differ from the number of spawners due to differences in fecundity at age and time (units of million of eggs)
 - **Releases** hatchery production, summed across release strategies (units of hundreds of thousands of juveniles)
 
