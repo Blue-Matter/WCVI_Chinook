@@ -42,6 +42,32 @@ OM_plot <- "A. Recent ocean ER"
 MP_plot <- "(9) ER = 1, pNOB = 1"
 sim <- 1:3
 
+# Quantile figures (all simulations)
+#val_plot <- filter(
+#  val,
+#  Scenario == OM_plot,
+#  scenario == MP_plot,
+#  Year < 30
+#) %>%
+#  filter(var_name %in% var_plot) %>%
+#  summarise(median = median(value),
+#            lower = quantile(value, 0.025),
+#            upper = quantile(value, 0.975),
+#            .by = c(Year, var_name, Scenario, scenario)) %>%
+#  mutate(var_name = factor(var_name, var_plot))
+#
+#g <- ggplot(val_plot, aes(Year, median)) +
+#  facet_wrap(vars(var_name), scales = "free_y") +
+#  geom_ribbon(aes(ymin = lower, ymax = upper), fill = "grey80", alpha = 0.75) +
+#  geom_line() +
+#  expand_limits(y = 0) +
+#  theme(strip.background = element_blank(), legend.position = "bottom") +
+#  labs(y = NULL, colour = "Simulation") +
+#  ggtitle(OM_plot, subtitle = MP_plot)
+#ggsave("figures/SMSE/example_quantileplot_ts.png", height = 6, width = 6)
+
+
+
 # Line figure
 val_plot <- filter(
   val,
