@@ -33,18 +33,20 @@ brood <- readr::read_csv("data/Sarita/sarita_brood.csv") %>%
   rename(Year = `Row Labels`)
 brood$Broodtake <- rowSums(brood[, -1], na.rm = TRUE)
 
-png("figures/Sarita_brood.png", units = "in", height = 4, width = 6, res = 400)
-par(mar = c(5, 4, 1, 1))
-plot(`Sum of 01Used For Broodstock` ~ Year, brood, typ = "o", ylab = "Brood", ylim = c(0, 600))
-lines(Broodtake ~ Year, brood, typ = "o", ylab = "Broodstock", col = "red", pch = 16)
-graphics::grid()
-legend("topleft", c("Broodtake", "Brood + Holding Mortality + Other"), col = 1:2, pch = c(1, 16), lty = 1, bty = "n")
-dev.off()
+if (FALSE) {
+  png("figures/Sarita_brood.png", units = "in", height = 4, width = 6, res = 400)
+  par(mar = c(5, 4, 1, 1))
+  plot(`Sum of 01Used For Broodstock` ~ Year, brood, typ = "o", ylab = "Brood", ylim = c(0, 600))
+  lines(Broodtake ~ Year, brood, typ = "o", ylab = "Broodstock", col = "red", pch = 16)
+  graphics::grid()
+  legend("topleft", c("Broodtake", "Brood + Holding Mortality + Other"), col = 1:2, pch = c(1, 16), lty = 1, bty = "n")
+  dev.off()
 
-#g <- sarita_rel %>% reshape2::melt(id.vars = "Year") %>%
-#  ggplot(aes(Year, value, colour = variable)) +
-#  geom_line() +
-#  geom_point()
+  g <- sarita_rel %>% reshape2::melt(id.vars = "Year") %>%
+    ggplot(aes(Year, value, colour = variable)) +
+    geom_line() +
+    geom_point()
+}
 
 # CWT data from RBT
 # broodyear 1973 - 2021
@@ -137,33 +139,35 @@ cwt_plot <- rbind(
   rename(BroodYear = Var1, Age = Var2, n = value) %>%
   mutate(p = n/sum(n, na.rm = TRUE), .by = c(BroodYear, type))
 
-g <- cwt_plot %>%
-  filter(!is.na(p)) %>%
-  ggplot(aes(BroodYear, p, fill = factor(Age, levels = 5:2))) +
-  facet_wrap(vars(type), ncol = 1) +
-  geom_col(width = 1, colour = "grey40", linewidth = 0.1) +
-  scale_fill_brewer(palette = "Set2") +
-  labs(x = "Brood Year", y = "Proportion", fill = "Age", title = "Robertson Creek CWT") +
-  coord_cartesian(expand = FALSE)
-ggsave(paste0("figures/RBT_CWT_proportion_pesc", p_esc, ".png"), g, height = 6, width = 6)
+if (FALSE) {
+  g <- cwt_plot %>%
+    filter(!is.na(p)) %>%
+    ggplot(aes(BroodYear, p, fill = factor(Age, levels = 5:2))) +
+    facet_wrap(vars(type), ncol = 1) +
+    geom_col(width = 1, colour = "grey40", linewidth = 0.1) +
+    scale_fill_brewer(palette = "Set2") +
+    labs(x = "Brood Year", y = "Proportion", fill = "Age", title = "Robertson Creek CWT") +
+    coord_cartesian(expand = FALSE)
+  ggsave(paste0("figures/RBT_CWT_proportion_pesc", p_esc, ".png"), g, height = 6, width = 6)
 
-g2 <- g +
-  coord_cartesian(expand = FALSE, xlim = c(2013.5, 2020.5))
-ggsave("figures/RBT_CWT_prop2.png", g2, height = 4, width = 3)
+  g2 <- g +
+    coord_cartesian(expand = FALSE, xlim = c(2013.5, 2020.5))
+  ggsave("figures/RBT_CWT_prop2.png", g2, height = 4, width = 3)
 
-g <- cwt_plot %>%
-  filter(!is.na(p)) %>%
-  ggplot(aes(BroodYear, n, fill = factor(Age, levels = 5:2))) +
-  facet_wrap(vars(type), ncol = 1) +
-  geom_col(width = 1, colour = "grey40", linewidth = 0.1) +
-  scale_fill_brewer(palette = "Set2") +
-  labs(x = "Brood Year", y = "Catch", fill = "Age", title = "Robertson Creek CWT") +
-  coord_cartesian(expand = FALSE)
-ggsave(paste0("figures/RBT_CWT_catch_pesc", p_esc, ".png"), g, height = 6, width = 6)
+  g <- cwt_plot %>%
+    filter(!is.na(p)) %>%
+    ggplot(aes(BroodYear, n, fill = factor(Age, levels = 5:2))) +
+    facet_wrap(vars(type), ncol = 1) +
+    geom_col(width = 1, colour = "grey40", linewidth = 0.1) +
+    scale_fill_brewer(palette = "Set2") +
+    labs(x = "Brood Year", y = "Catch", fill = "Age", title = "Robertson Creek CWT") +
+    coord_cartesian(expand = FALSE)
+  ggsave(paste0("figures/RBT_CWT_catch_pesc", p_esc, ".png"), g, height = 6, width = 6)
 
-g2 <- g +
-  coord_cartesian(expand = FALSE, xlim = c(2013.5, 2020.5))
-ggsave("figures/CWT_esc_prop2.png", g2, height = 4, width = 6)
+  g2 <- g +
+    coord_cartesian(expand = FALSE, xlim = c(2013.5, 2020.5))
+  ggsave("figures/CWT_esc_prop2.png", g2, height = 4, width = 6)
+}
 
 # Data object for model
 Ldyr <- nrow(cwt_esc)
