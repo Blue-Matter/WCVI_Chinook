@@ -2,7 +2,8 @@
 #### Plot Robertson Creek CWT ----
 library(tidyverse)
 
-dat <- readr::read_csv("data/RBT_data_wfisheries.csv")
+dat <- readr::read_csv("data/RBT_data_wfisheries.csv") %>%
+  mutate(TagCode2 = as.numeric(TagCode))
 #problems(dat)
 dat[c(1013, 2273), ]
 
@@ -23,6 +24,16 @@ g <- rel %>%
   expand_limits(y = 0) +
   labs(x = "Brood Year", y = "CWT releases")
 ggsave("figures/rel.png", g, height = 3, width = 4)
+
+# Release strategies
+cwt_rs <- readxl::read_excel('data/2025-03-26_Robertson_CWT_Data.xlsx')
+g <- cwt_rs %>%
+  summarise(Rel = sum(`Total Released`), .by = c(BROOD_YEAR, `Release Strategy`)) %>%
+  mutate(p = Rel/sum(Rel), .by = BROOD_YEAR) %>%
+  ggplot(aes(BROOD_YEAR, Rel, colour = `Release Strategy`)) +
+  geom_point() +
+  geom_line()
+
 
 #### Identify sources of CWT
 # Preterminal = US and Canada
