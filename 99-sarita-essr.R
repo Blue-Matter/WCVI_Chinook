@@ -122,3 +122,11 @@ g <- samp_summary %>%
   labs(x = "Brood Year", y = "Nominal CWT recoveries (ESSR)") +
   theme(legend.position = "bottom")
 ggsave("figures/Sarita_ESSR_CWT_nominal.png", g, height = 4, width = 6)
+
+
+# Total releases
+sarita_sep <- readxl::read_excel(
+  "data/Sarita/WCVI Chinook life cycle master Nov 2024.xlsx",
+  sheet = "Sarita-dataSEP",
+  range = "A20:AG83"
+)
