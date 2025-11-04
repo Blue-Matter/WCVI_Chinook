@@ -16,7 +16,7 @@ With declining fecundity, there are fewer spawners due to reduced egg production
 Changes in PNI are frequently more marginal in scenarios D and E because the differences in survival and fecundity impact NOS and HOS equally.
 
 Selection of a management strategy that meets objectives, e.g., maximize spawners and PNI, can be facilitated by comparing management choices in a tradeoff figure (Figure \@ref(fig:dt-tradeoff)). 
-The strategy that maximizes both objectives are in the top right corner for each scenario. None of the evaluated strategies are clearly optimal for maximazing both spawners and PNI in all scenarios. 
+The strategy that maximizes both objectives are in the top right corner for each scenario. None of the evaluated strategies are clearly optimal for maximizing both spawners and PNI in all scenarios. 
 In such a case, it is helpful to first prioritize either objective, high PNI or high spawners, to filter the management strategies that perform well for the primary objective. 
 The management strategy among the filtered choices that performs best for the secondary objective can then be chosen.
 For example, if maximizing spawners is the primary objective, then an in-river exploitation rate of 0.5 should be used, with three candidate pNOB targets to choose from.

@@ -71,7 +71,7 @@ knitr::include_graphics(here::here("figures/Sarita-fry-survival.png"))
 knitr::include_graphics(here::here("figures/Sarita_envvar.png"))
 ```
 
-(ref:fig-fry-surv2) Top: The environmental variable sampled for the projection by bootstrapping historical values . Bottom: the corresponding egg-fry survival by converting the environmental variable using the regression in Figure \@ref(fig:env), with stochasticity using the residual standard deviation.
+(ref:fig-fry-surv2) Top: The environmental variable sampled for the projection of Scenario C by bootstrapping historical values. Bottom: the corresponding egg-fry survival by converting the environmental variable using the regression in Figure \@ref(fig:env), with stochasticity using the residual standard deviation.
 
 ```{r fry-surv2, fig.cap="(ref:fig-fry-surv2)"}
 knitr::include_graphics(here::here("figures/Sarita_envvar_bootstrap.png"))
@@ -235,10 +235,16 @@ Nine management options were evaluated from a factorial combination of three in-
 The nine management options were evaluated against five scenarios describing alternative population dynamics.
 
 A. Recent ocean exploitation rates with freshwater survival centred around average historical autumn freshwater conditions
-A. Same as A with freshwater survival centred around above average historical autumn freshwater conditions
-A. Same as A with freshwater survival sampled stochastically from bootstrapping historical autumn freshwater conditions
-A. Same as A with 25% lower ocean exploitation rates from both the preterminal and terminal fisheries
-A. Same as A with declining maturity and fecundity. The Sarita ERM estimates declining maturity (earlier age of maturity) in recent decades. The other scenarios uses a recent mean, but this scenario uses the trend during 1990--2018 and continues the trend into the projection (Figure \@ref(fig:mat-trend)). Fecundity at age decreased during the projection (Figure \@ref(fig:fec-trend)). A 5 percent reduction in size at age per decade was used, and the corresponding fecundity was calculated from the fecundity-at-length model in @brown2025.
+
+B. Same as A with freshwater survival centred around above average historical autumn freshwater conditions
+
+C. Same as A with freshwater survival sampled stochastically from bootstrapping historical autumn freshwater conditions
+
+D. Same as A with 25% lower ocean exploitation rates from both the preterminal and terminal fisheries
+
+E. Same as A with declining maturity and fecundity. The Sarita ERM estimates declining maturity (earlier age of maturity) in recent decades. 
+
+Scenarios A-D use a recent mean, but scenario E uses the trend during 1990--2018 and continues the trend into the projection (Figure \@ref(fig:mat-trend)). Fecundity at age decreased during the projection (Figure \@ref(fig:fec-trend)). A 5 percent reduction in size at age per decade was used, and the corresponding fecundity was calculated from the fecundity-at-length model in @brown2025.
 
 From the initial abundance estimated in the Sarita ERM at the end of the conditioning period, the population is projected forward for 30 years.
 For each scenario, 100 simulation replicates were used to accommodate stochastic parameters.
