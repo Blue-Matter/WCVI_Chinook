@@ -297,18 +297,6 @@ fpe <- reshape2::acast(sim_surv, list("Simulation", "year"), value.var = "fpe")
 #matplot(t(fps), typ = 'l')
 #matplot(t(fpe), typ = 'l')
 
-if (FALSE) {
-
-  png("figures/Sarita_envvar.png", height = 4, width = 6, res = 400, units = "in")
-  par(mar = c(5, 4, 1, 1), mfrow = c(1, 1))
-  matplot(t(fpe[1:3, ]), typ = 'l', panel.first = grid(),
-          ylab = "Egg-fry survival",
-          xlab = "Projection year", ylim = c(0, 0.15), lty = 1)
-  dev.off()
-
-}
-
-
 Habitat <- new(
   "Habitat",
   use_habitat = TRUE,
@@ -380,6 +368,22 @@ if (FALSE) {
           panel.first = grid(),
           xlab = "Projection year", ylim = c(0, 1), lty = 1)
 
+  dev.off()
+
+
+  png("figures/Sarita_envvar.png", height = 7, width = 6, res = 400, units = "in")
+  par(mar = c(5, 4, 2, 1), mfrow = c(2, 1))
+  matplot(t(fpe2[1:3, ]), typ = 'l', panel.first = grid(),
+          ylab = "Egg-fry survival",
+          xlab = "Projection year", ylim = c(0, 0.3), lty = 1)
+  title("(B) Above-average freshwater survival")
+  #mean(fpe2)
+
+  matplot(t(fpe3[1:3, ]), typ = 'l', panel.first = grid(),
+          ylab = "Egg-fry survival",
+          xlab = "Projection year", ylim = c(0, 0.3), lty = 1)
+  title("(C) Below-average freshwater survival")
+  #mean(fpe3)
   dev.off()
 
 }
