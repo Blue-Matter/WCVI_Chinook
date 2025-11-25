@@ -1,18 +1,19 @@
 Performance metric,Definition,Units and Range,Type
 PNI,Proportionate natural influence from pNOB and pHOS,Proportion (0-1),Primary
-Total spawners,Number of combined hatchery and natural spawners,Abundance (> 0),Primary
-P_250_NOS,Probability that natural origin spawners exceed the lower benchmark of 250,Proportion (0-1),Primary
-P_476_NOS,Probability that natural origin spawners exceed the upper benchmark of 476,Proportion (0-1),Primary
-P_250,Probability that total spawners exceed the lower benchmark of 250,Proportion (0-1),Primary
-P_476,Probability that total spawners exceed the upper benchmark of 476,Proportion (0-1),Primary
-P_250,Probability that total spawners exceed the lower benchmark of 250,Proportion (0-1),Primary
-P_1300,Probability that total spawners exceed 1300,Proportion (0-1),Primary
+Natural spawners,Number of natural spawners (sum of hatchery-origin and natural-origin spawners),Abundance (> 0),Primary
+P_PNI50,Probability that PNI exceeds 0.5,Proportion (0-1),Primary
+P_250_NOS,Probability that natural+origin spawners exceed the lower benchmark of 250,Proportion (0-1),Primary
+P_476_NOS,Probability that natural-origin spawners exceed the upper benchmark of 476,Proportion (0-1),Primary
+P_250_NS,Probability that natural spawners exceed the lower benchmark of 250,Proportion (0-1),Primary
+P_476_NS,Probability that natural spawners exceed the upper benchmark of 476,Proportion (0-1),Primary
+P_250_NS,Probability that natural spawners exceed the lower benchmark of 250,Proportion (0-1),Primary
+P_1300_NS,Probability that natural spawners exceed 1300,Proportion (0-1),Primary
+"IR Return",In-river return,Abundance (> 0),Ancillary
+"IR Catch",Catch from in-river fishery,Abundance (> 0),Ancillary
+Brood,Number of natural and hatchery origin brood,Abundance (> 0),Ancillary
+Egg,Egg production in the natural environment (from natural spawners),Millions of eggs (> 0),Ancillary
+Releases,Total hatchery releases,Hundreds of thousands (> 0),Ancillary
 pNOBeff,Effective proportion of natural origin brood (weighted by age class fecundity),Proportion (0-1),Ancillary
 pHOSeff,"Proportion of effective hatchery spawners, discounted by reduced reproductive success",Proportion (0-1),Ancillary
 pWILD,Proportion wild spawners,Proportion (0-1),Ancillary
 Mean age,Average age of spawners,Years (between 2-5),Ancillary
-Brood,Number of natural and hatchery origin brood,Abundance (> 0),Ancillary
-ESSR catch,Total catch of hatchery origin escapement,Abundance (> 0),Ancillary
-Escapement,"Escapement from the terminal fishery, i.e., the in-river return",Abundance (> 0),Ancillary
-Egg,Egg production in the natural environment,Millions of eggs (> 0),Ancillary
-Releases,Total hatchery releases,Hundreds of thousands (> 0),Ancillary

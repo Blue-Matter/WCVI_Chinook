@@ -13,9 +13,9 @@
     } else if (var == "Mean age") {
       Sp <- SMSE@NOS[, 1, , ] + SMSE@HOS[, 1, , ]
       res <- apply(Sp, c(1, 3), function(w) weighted.mean(x = 1:5, w = w))
-    } else if (var == "Escapement") {
+    } else if (var == "IR_Return") {
       res <- apply(SMSE@Escapement_NOS[, s, , ] + SMSE@Escapement_HOS[, s, , ], c(1, 3), sum)
-    } else if (var == "Catch") {
+    } else if (var == "IR_Catch") {
       res <- SMSE@Misc$inriver_catch
     } else {
       res <- plot_statevar_ts(SMSE, var, figure = FALSE, quant = FALSE)
@@ -69,6 +69,12 @@ plot_dotplot <- function(val_sim) {
 
 plot_table <- function(df, padding = 0.52) {
 
+  lev <- levels(df$variable)
+
+  df$variable <- sub(" ", "\n", df$variable)
+  lev <- sub(" ", "\n", lev)
+  df$variable <- factor(df$variable, lev)
+
   d <- df %>%
     mutate(txt = signif(median, 3)) %>%
     mutate(txt = ifelse(txt < 0.01 & txt > 0, "<0.01", txt)) %>%
@@ -102,53 +108,59 @@ plot_table <- function(df, padding = 0.52) {
   g
 }
 
-decision_table_grid <- function(x, title = "PNI", ncol = 2, nrow = 2) {
+decision_table_grid <- function(x, title = "PNI", ncol = 2,
+                                fill_scheme = scale_fill_gradient2(low = "deeppink", high = "green4", mid = "white", midpoint = 0.5)) {
 
-  vars <- unique(x$Scenario)
+  g <- salmonMSE::plot_decision_table(
+    x = x$ER,
+    y = x$pNOB_target,
+    z = x$value,
+    scenario = x$Scenario,
+    title = title,
+    xlab = "ER",
+    ylab = "pNOB target",
+    ncol = ncol
+  ) +
+    fill_scheme
 
-  glist <- lapply(1:length(vars), function(i) {
-    df <- x %>% dplyr::filter(Scenario == vars[i])
-    g <- salmonMSE::plot_decision_table(
-      x = df$ER,
-      y = df$pNOB_target,
-      z = df$value,
-      xlab = "ER",
-      ylab = "pNOB target"
-    ) +
-      labs(title = ifelse(i == 1, title, ""), subtitle = vars[i])
-    g
-  })
-
-  g <- ggpubr::ggarrange(plotlist = glist, ncol = ncol, nrow = nrow)
+  #vars <- unique(x$Scenario)
+#
+  #dt <- data.frame(x = x$ER, y = x$pNOB_target, z = x$value, Scenario = x$Scenario)
+  #dt$txt <- format(round(dt$z, 2))
+#
+  #g <- ggplot(dt, aes(factor(.data$x), factor(.data$y), fill = .data$z)) +
+  #  geom_tile(colour = "grey20", alpha = 0.6) +
+  #  geom_text(aes(label = .data$txt)) +
+  #  coord_cartesian(expand = FALSE) +
+  #  guides(fill = "none") +
+  #  facet_wrap(vars(.data$Scenario), ncol = 2) +
+  #  theme_bw() +
+  #  theme(panel.grid.major = element_blank(),
+  #        strip.background = element_blank(),
+  #        panel.grid.minor = element_blank()) +
+  #  fill_scheme +
+  #  labs(x = "ER", y = "pNOB target", title = title)
   g
 }
 
 tradeoff_grid <- function(val_sim, xname = "Total Spawners", yname = "PNI", xlab = xname, ylab = yname,
-                          xlim = NULL, ylim = NULL, ncol = 2, nrow = 2) {
-  vars <- unique(val_sim$Scenario)
+                          xlim = NULL, ylim = NULL, ncol = 2) {
 
-  glist <- lapply(1:length(vars), function(i) {
+  g <- salmonMSE::plot_tradeoff(
+    val_sim %>% filter(variable == xname) %>% select(lwr, median, upr) %>% as.matrix(),
+    val_sim %>% filter(variable == yname) %>% select(lwr, median, upr) %>% as.matrix(),
+    val_sim %>% filter(variable == xname) %>% pull(pNOB_target) %>% factor(),
+    val_sim %>% filter(variable == xname) %>% pull(ER) %>% factor(),
+    xlab = xlab,
+    ylab = ylab,
+    x1lab = "pNOB target",
+    x2lab = "ER",
+    scenario = val_sim %>% filter(variable == xname) %>% pull(Scenario),
+    ncol = ncol
+  ) +
+    scale_shape_manual(values = c(1, 4, 16)) +
+    coord_cartesian(xlim = xlim, ylim = ylim)
 
-    d <- val_sim %>% dplyr::filter(Scenario == vars[i])
-    d[is.na(d)] <- 0
-    g <- salmonMSE::plot_tradeoff(
-      d %>% filter(variable == xname) %>% select(lwr, median, upr) %>% as.matrix(),
-      d %>% filter(variable == yname) %>% select(lwr, median, upr) %>% as.matrix(),
-      d %>% filter(variable == xname) %>% pull(pNOB_target) %>% factor(),
-      d %>% filter(variable == xname) %>% pull(ER) %>% factor(),
-      xlab = xname,
-      ylab = yname,
-      x1lab = "pNOB target",
-      x2lab = "ER"
-    ) +
-      scale_shape_manual(values = c(1, 4, 16)) +
-      labs(subtitle = vars[i]) +
-      coord_cartesian(xlim = xlim, ylim = ylim)
-
-    g
-
-  })
-  g <- ggpubr::ggarrange(plotlist = glist, ncol = ncol, nrow = nrow, legend = "bottom", common.legend = TRUE)
   g
 }
 
@@ -162,5 +174,68 @@ plot_histogram <- function(val, var = "PNI", binwidth = 0.025, scales = "free_y"
     labs(x = var, y = "Frequency") +
     theme(strip.background = element_blank())
   g
+}
+
+
+plot_spaghetti <- function(x, sims, OM_name = NULL, MP_name = NULL, alpha = 0.4, by_origin = FALSE) {
+
+  if (by_origin) {
+    require(ggborderline)
+
+    meds <- summarise(x, value = median(value), .by = c(Year, var_name, Scenario, scenario, Origin))
+
+    g <- x %>%
+      mutate(gr = paste(Simulation, Origin)) %>%
+      ggplot(aes(Year, value)) +
+      facet_wrap(vars(var_name), scales = "free_y") +
+      geom_line(alpha = alpha, aes(colour = Origin, group = factor(gr))) +
+      #geom_line(data = meds, colour = "black", aes(group = Origin), linewidth = 1.5) +
+      ggborderline::geom_borderline(data = meds, aes(colour = Origin), bordercolour = "grey40", linewidth = 1) +
+      expand_limits(y = 0) +
+      theme(strip.background = element_blank(), legend.position = "bottom") +
+      labs(y = NULL, colour = NULL) +
+      ggtitle(OM_name, subtitle = MP_name)
+
+  } else if (missing(sims)) { # All simulations
+
+    meds <- summarise(x, value = median(value), .by = c(Year, var_name, Scenario, scenario))
+
+    g <- ggplot(x, aes(Year, value)) +
+      facet_wrap(vars(var_name), scales = "free_y") +
+      geom_line(alpha = alpha, colour = "grey40", aes(group = factor(Simulation))) +
+      geom_line(data = meds, colour = "blue", linewidth = 1) +
+      expand_limits(y = 0) +
+      theme(strip.background = element_blank(), legend.position = "bottom") +
+      labs(y = NULL) +
+      ggtitle(OM_name, subtitle = MP_name)
+
+  } else {
+
+    val_plot <- dplyr::filter(x, Simulation %in% sims)
+    g <- ggplot(val_plot, aes(Year, value, colour = factor(Simulation))) +
+      facet_wrap(vars(var_name), scales = "free_y") +
+      geom_line() +
+      expand_limits(y = 0) +
+      theme(strip.background = element_blank(), legend.position = "bottom") +
+      labs(y = NULL, colour = "Simulation") +
+      scale_colour_brewer(palette = "Dark2") +
+      ggtitle(OM_name, subtitle = MP_name)
+  }
+  g
+}
+
+# Function that parses text for management options and typesets the ER (pass along to ggplot)
+bold_scenario <- function(x) {
+  xx <- strsplit(x, ",")
+  xout <- sapply(xx, function(i) {
+    if (grepl("= 1", i[1])) {
+      paste0("italic(underline(\"", i[1], "\"))~\"", i[2], "\"")
+    } else if (grepl("= 0.75", i[1])) {
+      paste0("plain(\"", i[1], "\")~\"", i[2], "\"")
+    } else if (grepl("= 0.5", i[1])) {
+      paste0("bold(\"", i[1], "\")~\"", i[2], "\"")
+    }
+  })
+  parse(text = xout)
 }
 

@@ -170,11 +170,9 @@ Hatchery <- new(
 #)
 
 # Calculate HistNjuv_NOS (which return year?)
-nyears_cm <- 45
-Njuv_NOS <- sapply(report_RBT[sim_samp],
-                   function(x) x$N[nyears_cm + 1, , 1],
-                   simplify = "array")
-Njuv_HOS <- sapply(report_RBT[sim_samp], function(x) x$N[nyears_cm + 1, , 2])
+nyears_cm <- 45 - 5 # Sample abundance from final year with complete brood life cycle
+Njuv_CM <- sapply(report_RBT[sim_samp], function(x) x$N[nyears_cm + 1, , ],
+                  simplify = "array")
 
 # Assume 50-50 ratio of spawners by life history group and release strategy
 NOS <- sapply(report_RBT[sim_samp], function(x) x$syear[seq(nyears_cm - nyears + 1, nyears_cm), , 1],
@@ -332,7 +330,7 @@ SOM <- new("SOM",
            Hatchery = Hatchery,
            Harvest = Harvest,
            Historical = Historical)
-saveRDS(SOM, "SOM/SOM_base.rds")
+saveRDS(SOM, "SOM/SOM_averagesurv.rds") # Not used!
 
 
 # Scenario with high fry/spawner
@@ -344,6 +342,16 @@ fpe2 <- reshape2::acast(sim_surv2, list("Simulation", "year"), value.var = "fpe"
 SOM2 <- SOM
 SOM2@Habitat@fry_sdev <- fpe2
 saveRDS(SOM2, "SOM/SOM_highsurv.rds")
+
+# Scenario with low fry/spawner
+env_series_low <- rep(40, proyears)
+sim_surv3 <- get_eggfry_surv(env_series_low)
+fpe3 <- reshape2::acast(sim_surv3, list("Simulation", "year"), value.var = "fpe")
+
+#matplot(t(fpe3), typ = 'l', ylab = "Egg-fry survival", xlab = "Projection  year", ylim = c(0, 0.4))
+SOM3 <- SOM
+SOM3@Habitat@fry_sdev <- fpe3
+saveRDS(SOM3, "SOM/SOM_lowsurv.rds")
 
 # Scenario that samples the full range of egg-fry survival
 sim_surv_bootstrap <- lapply(1:nsim, function(i) {
@@ -401,21 +409,21 @@ matt_slope <- matt_med[seq(12, 40), ] %>%
   filter(is.finite(value)) %>%
   summarise(slope = lm(value ~ Year) %>% coef() %>% getElement(2), .by = Age)
 
-SOM4 <- SOM
+SOM5 <- SOM4
 for (i in matt_slope$Age) {
-  matt_i <- matrix(qlogis(SOM3@Bio@p_mature[, i, SOM@nyears]), SOM@nsim, SOM@proyears)
-  for (y in 2:SOM@proyears) {
+  matt_i <- matrix(qlogis(SOM5@Bio@p_mature[, i, SOM5@nyears]), SOM5@nsim, SOM5@proyears)
+  for (y in 2:SOM5@proyears) {
     matt_i[, y] <- matt_i[, 1] + matt_slope$slope[matt_slope$Age == i] * y
   }
-  SOM4@Bio@p_mature[, i, SOM@nyears + seq(1, SOM@proyears)] <- plogis(matt_i)
+  SOM5@Bio@p_mature[, i, SOM5@nyears + seq(1, SOM5@proyears)] <- plogis(matt_i)
 
-  for (r in SOM3@Hatchery@n_r) {
+  for (r in SOM5@Hatchery@n_r) {
 
-    matt_i <- matrix(qlogis(SOM3@Hatchery@p_mature_HOS[, i, SOM@nyears, r]), SOM@nsim, SOM@proyears)
-    for (y in 2:SOM@proyears) {
+    matt_i <- matrix(qlogis(SOM5@Hatchery@p_mature_HOS[, i, SOM5@nyears, r]), SOM5@nsim, SOM5@proyears)
+    for (y in 2:SOM5@proyears) {
       matt_i[, y] <- matt_i[, 1] + matt_slope$slope[matt_slope$Age == i] * y
     }
-    SOM4@Hatchery@p_mature_HOS[, i, SOM@nyears + seq(1, SOM@proyears), r] <- plogis(matt_i)
+    SOM5@Hatchery@p_mature_HOS[, i, SOM5@nyears + seq(1, SOM5@proyears), r] <- plogis(matt_i)
   }
 
 }
@@ -430,9 +438,9 @@ for (a in 3:5) {
     byrow = TRUE
   )
 }
-SOM4@Bio@fec <- fec_decline
-SOM4@Hatchery@fec_brood <- fec_decline
-saveRDS(SOM4, "SOM/SOM_declinematfec.rds")
+SOM5@Bio@fec <- fec_decline
+SOM5@Hatchery@fec_brood <- fec_decline
+saveRDS(SOM5, "SOM/SOM_declinematfec.rds")
 
 
 if (FALSE) {
@@ -485,7 +493,7 @@ if (FALSE) {
   g <- ggpubr::ggarrange(g1, g2, ncol = 1, common.legend = TRUE, legend = "right")
   ggsave("figures/SMSE/Sarita_proj_maturity.png", g, height = 6, width = 6)
 
-  g <- (SOM3@Bio@fec[1, , ]/p_female) %>%
+  g <- (SOM5@Bio@fec[1, , ]/p_female) %>%
     reshape2::melt() %>%
     rename(Age = Var1, Year = Var2) %>%
     filter(Age > 1) %>%

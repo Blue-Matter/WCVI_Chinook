@@ -7,14 +7,14 @@ g_init <- expand.grid(
   ER = c(0.5, 0.75, 0.999),
   pNOB_target = c(0.5, 0.75, 0.99),
   ocean_ER_scalar = 1,
-  surv = c("avg", "high", "bootstrap"),
+  surv = c("bootstrap", "high", "low"),
   fec = "constant"
 )
 
 g <- rbind(
   g_init,
-  g_init %>% filter(surv == "avg") %>% mutate(ocean_ER_scalar = 0.75),
-  g_init %>% filter(surv == "avg") %>% mutate(ocean_ER_scalar = 1, fec = "decline")
+  g_init %>% filter(surv == "bootstrap") %>% mutate(ocean_ER_scalar = 0.75),
+  g_init %>% filter(surv == "bootstrap") %>% mutate(ocean_ER_scalar = 1, fec = "decline")
 ) %>%
   mutate(n = 1:n())
 
@@ -98,12 +98,12 @@ for (j in 1:5) {
   SMSE_list <- sfLapply(runs, function(i, g) {
     require(salmonMSE)
 
-    if (g$surv[i] == "avg") {
-      SOM <- readRDS(file.path("SOM", "SOM_base.rds"))
+    if (g$surv[i] == "bootstrap") {
+      SOM <- readRDS(file.path("SOM", "SOM_surv_bootstrap.rds"))
     } else if (g$surv[i] == "high") {
       SOM <- readRDS(file.path("SOM", "SOM_highsurv.rds"))
-    } else if (g$surv[i] == "bootstrap") {
-      SOM <- readRDS(file.path("SOM", "SOM_surv_bootstrap.rds"))
+    } else if (g$surv[i] == "low") {
+      SOM <- readRDS(file.path("SOM", "SOM_lowsurv.rds"))
     }
 
     if (g$fec[i] == "decline") {
