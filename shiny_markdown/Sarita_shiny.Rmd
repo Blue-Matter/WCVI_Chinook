@@ -112,7 +112,7 @@ renderPlot({
 
 ```{r sims-spaghetti}
 inputPanel(
-  pickerInput("Sim_spaghetti", label = "Simulation Number",
+  pickerInput("Sim_spaghetti", label = "Simulation Number (up to 8 total)",
               choices = unique(val$Simulation),
               selected = seq(1, min(val$Simulation, 3)),
               multiple = TRUE)
