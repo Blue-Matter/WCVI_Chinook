@@ -1,0 +1,171 @@
+---
+title: "Sarita management evaluation"
+author: "Q. Huynh"
+date: "2025-11-24"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE
+)
+
+library(shiny)
+library(shinyWidgets)
+library(tidyverse)
+
+### Import functions ----
+source(here::here("99-Sarita-results-functions.R"))
+
+### Grab data frame ----
+val <- readr::read_csv(here::here("tables/Sarita_outcomes_sim_year2.csv")) %>%
+  mutate(var_name = variable)
+#table(val$var_name)
+
+val$var_name[grepl("Egg", val$variable)] <- "Egg (10^6)"
+
+val$var_name[grepl("Smolt_NOS|Smolt_HOS", val$variable)] <- "Outmigrating juvenile (10^5)"
+val$var_name[grepl("Smolt_Rel", val$variable)] <- "Outmigrating juvenile (10^5)"
+
+val$var_name[grepl("KPT", val$variable)] <- "Preterminal catch"
+val$var_name[grepl("Return", val$variable)] <- "Mature Return"
+val$var_name[grepl("KT", val$variable)] <- "Terminal catch"
+
+val$var_name[grepl("Escapement", val$variable)] <- "In-river Return"
+
+val$var_name[grepl("NOB|HOB", val$variable)] <- "Brood"
+
+val$var_name[grepl("Catch", val$variable)] <- "In-river Catch"
+
+val$var_name[val$variable == "NOS" | val$variable == "HOS"] <- "Natural Spawners"
+
+val$Origin <- "Hatchery origin"
+val$Origin[grepl(".NO.", val$variable)] <- "Natural origin"
+val$Origin[val$variable == "Smolt_HOS"] <- "Natural origin"
+val$Origin[val$variable == "NOB"] <- "Natural origin"
+val$Origin[val$variable == "NOS"] <- "Natural origin"
+
+val$value[grepl("10\\^5", val$var_name)] <- val$value[grepl("10\\^5", val$var_name)]/1e5
+val$value[grepl("10\\^6", val$var_name)] <- val$value[grepl("10\\^6", val$var_name)]/1e6
+
+var_plot <- c("Egg (10^6)", "Outmigrating juvenile (10^5)", #"Hatchery Release (10^5)",
+              "Preterminal catch", "Mature Return", "Terminal catch", "In-river Return",
+              "Brood", "In-river Catch", "Natural Spawners")
+```
+
+This R Markdown document is made interactive using Shiny. Unlike the more traditional workflow of creating static reports, you can now create documents that allow your readers to change the assumptions underlying your analysis and see the results immediately. 
+
+To learn more, see [Interactive Documents](http://rmarkdown.rstudio.com/authoring_shiny.html).
+
+## Inputs {.tabset}
+
+```{r selections}
+inputPanel(
+  selectInput("OM", label = "Scenario",
+              choices = unique(val$Scenario)),
+  
+  selectInput("MP", label = "Management option",
+              choices = unique(val$scenario))
+)
+```
+
+### Spaghetti plot 
+
+#### All simulations
+
+```{r spaghetti}
+renderPlot({
+  val_plot <- filter(
+    val,
+    Scenario == input$OM,
+    scenario == input$MP,
+    ifelse(var_name == "Outmigrating juvenile (10^5)", Year > 1, Year < max(.data$Year))
+  ) %>%
+    filter(var_name %in% var_plot) %>%
+    summarise(value = sum(value), .by = c(Year, var_name, Scenario, scenario, Simulation)) %>%
+    mutate(var_name = factor(var_name, var_plot))
+  
+  plot_spaghetti(val_plot, OM_name = input$OM, MP_name = input$MP)
+}, res = 100, height = 600)
+```
+
+#### All simulations, by origin
+
+```{r spaghetti-origin, out.height="7in"}
+renderPlot({
+  val_plot_origin <- filter(
+    val,
+    Scenario == input$OM,
+    scenario == input$MP,
+    ifelse(var_name == "Outmigrating juvenile (10^5)", Year > 1, Year < max(.data$Year))
+  ) %>%
+    filter(var_name %in% var_plot) %>%
+    summarise(value = sum(value), .by = c(Year, var_name, Scenario, scenario, Simulation, Origin)) %>%
+    mutate(var_name = factor(var_name, var_plot))
+  
+  plot_spaghetti(val_plot_origin, OM_name = input$OM, MP_name = input$MP, by_origin = TRUE, alpha = 0.1)
+}, res = 100, height = 600)
+```
+
+#### Subset of simulations
+
+```{r sims-spaghetti}
+inputPanel(
+  pickerInput("Sim_spaghetti", label = "Simulation Number",
+              choices = unique(val$Simulation),
+              selected = seq(1, min(val$Simulation, 3)),
+              multiple = TRUE)
+)
+```
+
+```{r spaghetti-subset}
+renderPlot({
+  val_plot <- filter(
+    val,
+    Scenario == input$OM,
+    scenario == input$MP,
+    ifelse(var_name == "Outmigrating juvenile (10^5)", Year > 1, Year < max(.data$Year))
+  ) %>%
+    filter(var_name %in% var_plot) %>%
+    summarise(value = sum(value), .by = c(Year, var_name, Scenario, scenario, Simulation)) %>%
+    mutate(var_name = factor(var_name, var_plot))
+  
+  plot_spaghetti(val_plot, sims = input$Sim_spaghetti, OM_name = input$OM, MP_name = input$MP)
+}, res = 100, height = 600)
+```
+
+### Barplots 
+
+```{r sims-barplot}
+inputPanel(
+  selectInput("Sim_barplot", label = "Simulation Number",
+              choices = unique(val$Simulation))
+)
+```
+
+```{r barplot}
+renderPlot({
+  val_plot_origin <- filter(
+    val,
+    Scenario == input$OM,
+    scenario == input$MP,
+    Simulation == input$Sim_barplot,
+    ifelse(var_name == "Outmigrating juvenile (10^5)", Year > 1, Year < max(.data$Year))
+  ) %>%
+    filter(var_name %in% var_plot) %>%
+    summarise(value = sum(value), .by = c(Year, var_name, Scenario, scenario, Simulation, Origin)) %>%
+    mutate(var_name = factor(var_name, var_plot))
+  
+  val_plot_origin %>%
+    ggplot(aes(Year, value)) +
+      facet_wrap(vars(var_name), scales = "free_y") +
+      geom_col(colour = "black", linewidth = 0.1, width = 1, alpha = 0.75, aes(fill = Origin)) +
+      expand_limits(y = 0) +
+      theme(strip.background = element_blank(), legend.position = "bottom") +
+      labs(y = NULL, fill = NULL, title = input$OM, subtitle = input$MP, caption = paste("Simulation", input$Sim_barplot))
+}, res = 100, height = 600)
+```
+
+
+
