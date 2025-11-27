@@ -192,7 +192,7 @@ readr::write_csv(df, file = "tables/Sarita_outcomes_sim_year.csv") # Save for Sl
 rm(df)
 
 # Big data frame of state variables for each simulation and year (for salmonMSE app figure)
-state_var2 <- c("Egg_NOS", "Egg_HOS", "Smolt_Rel", "Smolt_HOS", "Smolt_HOS", "KPT_NOS", "KPT_HOS", "Return_NOS", "Return_HOS",
+state_var2 <- c("Egg_NOS", "Egg_HOS", "Smolt_Rel", "Smolt_NOS", "Smolt_HOS", "KPT_NOS", "KPT_HOS", "Return_NOS", "Return_HOS",
                 "KT_NOS", "KT_HOS",
                 "Escapement_NOS", "Escapement_HOS", "NOB", "HOB", "IR_Catch", "NOS", "HOS")
 
