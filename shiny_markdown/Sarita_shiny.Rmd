@@ -1,7 +1,7 @@
 ---
 title: "Sarita management evaluation"
 author: "Q. Huynh"
-date: "2025-11-24"
+date: "2025-11-27"
 output: html_document
 runtime: shiny
 ---
@@ -11,47 +11,47 @@ knitr::opts_chunk$set(
   echo = FALSE
 )
 
+### Install packages ----
+pkg <- c("rmarkdown", "shiny", "shinyWidgets", "tidyverse", "here", "ggborderline", "reshape2")
+sapply(pkg, function(i) {
+  if (!i %in% installed.packages()) install.packages(i)
+})
+
 library(shiny)
 library(shinyWidgets)
 library(tidyverse)
 
 ### Import functions ----
-source(here::here("99-Sarita-results-functions.R"))
+fn_file <- "99-Sarita-results-functions.R"
 
-### Grab data frame ----
-val <- readr::read_csv(here::here("tables/Sarita_outcomes_sim_year2.csv")) %>%
-  mutate(var_name = variable)
-#table(val$var_name)
+if (file.exists(here::here(fn_file))) {
+  source(here::here("99-Sarita-results-functions.R"))
+} else {
+  fn_file <- file.path(tempdir(), "99-Sarita-results-functions.R")
+  download.file(
+    "https://raw.githubusercontent.com/Blue-Matter/WCVI_Chinook/refs/heads/main/99-Sarita-results-functions.R",
+    fn_file
+  )
+  source(fn_file)
+}
 
-val$var_name[grepl("Egg", val$variable)] <- "Egg (10^6)"
-
-val$var_name[grepl("Smolt_NOS|Smolt_HOS", val$variable)] <- "Outmigrating juvenile (10^5)"
-val$var_name[grepl("Smolt_Rel", val$variable)] <- "Outmigrating juvenile (10^5)"
-
-val$var_name[grepl("KPT", val$variable)] <- "Preterminal catch"
-val$var_name[grepl("Return", val$variable)] <- "Mature Return"
-val$var_name[grepl("KT", val$variable)] <- "Terminal catch"
-
-val$var_name[grepl("Escapement", val$variable)] <- "In-river Return"
-
-val$var_name[grepl("NOB|HOB", val$variable)] <- "Brood"
-
-val$var_name[grepl("Catch", val$variable)] <- "In-river Catch"
-
-val$var_name[val$variable == "NOS" | val$variable == "HOS"] <- "Natural Spawners"
-
-val$Origin <- "Hatchery origin"
-val$Origin[grepl(".NO.", val$variable)] <- "Natural origin"
-val$Origin[val$variable == "Smolt_HOS"] <- "Natural origin"
-val$Origin[val$variable == "NOB"] <- "Natural origin"
-val$Origin[val$variable == "NOS"] <- "Natural origin"
-
-val$value[grepl("10\\^5", val$var_name)] <- val$value[grepl("10\\^5", val$var_name)]/1e5
-val$value[grepl("10\\^6", val$var_name)] <- val$value[grepl("10\\^6", val$var_name)]/1e6
+### Grab array and convert to data frame, download if necessary ----
+if (dir.exists(here::here("tables")) && file.exists(here::here("tables/Sarita_app_results.rds"))) {
+  val_array <- readRDS(here::here("tables/Sarita_app_results.rds")) 
+} else {
+  file_name <- file.path(tempdir(), "Sarita_app_results.rds")
+  download.file(
+    "https://github.com/Blue-Matter/WCVI_Chinook/raw/refs/heads/main/tables/Sarita_app_results.rds",
+    file_name
+  )
+  val_array <- readRDS(file_name)
+}
 
 var_plot <- c("Egg (10^6)", "Outmigrating juvenile (10^5)", #"Hatchery Release (10^5)",
               "Preterminal catch", "Mature Return", "Terminal catch", "In-river Return",
               "Brood", "In-river Catch", "Natural Spawners")
+val <- reshape2::melt(val_array) %>%
+  mutate(var_name = factor(var_name, var_plot))
 ```
 
 This R Markdown document is made interactive using Shiny. Unlike the more traditional workflow of creating static reports, you can now create documents that allow your readers to change the assumptions underlying your analysis and see the results immediately. 
@@ -76,17 +76,17 @@ inputPanel(
 
 ```{r spaghetti}
 renderPlot({
+  
   val_plot <- filter(
     val,
     Scenario == input$OM,
     scenario == input$MP,
     ifelse(var_name == "Outmigrating juvenile (10^5)", Year > 1, Year < max(.data$Year))
   ) %>%
-    filter(var_name %in% var_plot) %>%
-    summarise(value = sum(value), .by = c(Year, var_name, Scenario, scenario, Simulation)) %>%
-    mutate(var_name = factor(var_name, var_plot))
+    summarise(value = sum(value, na.rm = TRUE), .by = c(Year, var_name, Scenario, scenario, Simulation))
   
   plot_spaghetti(val_plot, OM_name = input$OM, MP_name = input$MP)
+  
 }, res = 100, height = 600)
 ```
 
@@ -94,17 +94,16 @@ renderPlot({
 
 ```{r spaghetti-origin, out.height="7in"}
 renderPlot({
+  
   val_plot_origin <- filter(
     val,
     Scenario == input$OM,
     scenario == input$MP,
     ifelse(var_name == "Outmigrating juvenile (10^5)", Year > 1, Year < max(.data$Year))
-  ) %>%
-    filter(var_name %in% var_plot) %>%
-    summarise(value = sum(value), .by = c(Year, var_name, Scenario, scenario, Simulation, Origin)) %>%
-    mutate(var_name = factor(var_name, var_plot))
+  )
   
   plot_spaghetti(val_plot_origin, OM_name = input$OM, MP_name = input$MP, by_origin = TRUE, alpha = 0.1)
+  
 }, res = 100, height = 600)
 ```
 
@@ -121,17 +120,17 @@ inputPanel(
 
 ```{r spaghetti-subset}
 renderPlot({
+  
   val_plot <- filter(
     val,
     Scenario == input$OM,
     scenario == input$MP,
     ifelse(var_name == "Outmigrating juvenile (10^5)", Year > 1, Year < max(.data$Year))
   ) %>%
-    filter(var_name %in% var_plot) %>%
-    summarise(value = sum(value), .by = c(Year, var_name, Scenario, scenario, Simulation)) %>%
-    mutate(var_name = factor(var_name, var_plot))
+    summarise(value = sum(value, na.rm = TRUE), .by = c(Year, var_name, Scenario, scenario, Simulation))
   
   plot_spaghetti(val_plot, sims = input$Sim_spaghetti, OM_name = input$OM, MP_name = input$MP)
+  
 }, res = 100, height = 600)
 ```
 
@@ -152,10 +151,7 @@ renderPlot({
     scenario == input$MP,
     Simulation == input$Sim_barplot,
     ifelse(var_name == "Outmigrating juvenile (10^5)", Year > 1, Year < max(.data$Year))
-  ) %>%
-    filter(var_name %in% var_plot) %>%
-    summarise(value = sum(value), .by = c(Year, var_name, Scenario, scenario, Simulation, Origin)) %>%
-    mutate(var_name = factor(var_name, var_plot))
+  )
   
   val_plot_origin %>%
     ggplot(aes(Year, value)) +
