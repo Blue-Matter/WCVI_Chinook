@@ -251,14 +251,31 @@ if (FALSE) {
   xpred <- seq(0, 100)
   ypred <- predict(fit, newdata = data.frame(x = xpred), se.fit = TRUE)
 
-  plot(y ~ x, fry_surv_year, ylim = c(0, 1250), xlim = c(0, 100))
-  lines(xpred, exp(ypred$fit))
-  lines(xpred, exp(ypred$fit - 1.96 * ypred$se.fit))
-  lines(xpred, exp(ypred$fit + 1.96 * ypred$se.fit))
-
-  g <- ggplot(fry_surv, aes(x, median)) +
+  g <- data.frame(
+    xpred = xpred,
+    ypred = ypred
+  ) %>%
+    mutate(lower = ypred.fit - 1.96 * ypred.se.fit,
+           upper = ypred.fit + 1.96 * ypred.se.fit) %>%
+    ggplot(aes(xpred, exp(ypred.fit))) +
+    geom_ribbon(aes(ymin = exp(lower), ymax = exp(upper)), colour = NA, fill = "grey80") +
     geom_line() +
-    geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.5, colour = 'grey80')
+    geom_point(data = fry_surv_year, aes(x, y)) +
+    geom_label(data = fry_surv_year, aes(x, y, label = year), vjust = "bottom", hjust = "left") +
+    labs(x = expression("Percent Days in October with Flow > 5"~~(m^3/sec)),
+         y = "Fry Per Returning Adult") +
+    coord_cartesian(xlim = c(0, 105))
+  g <- ggplot(fry_surv, aes(x, median)) +
+    geom_ribbon(aes(ymin = lwr, ymax = upr), colour = NA, fill = "grey80") +
+    geom_line() +
+    geom_point(data = fry_surv_year, aes(x, y)) +
+    geom_label(data = fry_surv_year, aes(x, y, label = year),
+               size = 0.75 * GeomLabel$default_aes$size,
+               vjust = "bottom", hjust = "left") +
+    labs(x = expression("Percent Days in October with Flow > 5"~~(m^3/sec)),
+         y = "Fry Per Returning Adult") +
+    coord_cartesian(xlim = c(10, 105))
+  ggsave("figures/Sarita-fry-survival.png", g, height = 4, width = 6)
 
   g <- ggplot(fry_surv_year, aes(year, x)) +
     geom_point() +
