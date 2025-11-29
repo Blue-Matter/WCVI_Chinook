@@ -75,7 +75,7 @@ Figures below show outcomes from user selected scenario, management option, and 
 This document is rendered in Quarto and made interactive using Shiny.
 
 
-## Filter results {.tabset}
+## Filter results 
 
 Select one population scenario (A-E) and one management strategy (1-9).
 
@@ -89,6 +89,8 @@ inputPanel(
               choices = unique(val$scenario), width = "200%")
 )
 ```
+
+::: {.panel-tabset}
 
 ### Spaghetti plot 
 
