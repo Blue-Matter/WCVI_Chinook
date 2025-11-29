@@ -512,13 +512,16 @@ ggsave(file.path(dir_dt, "decisiontable_P_1300.png"), g, width = 4, height = 5)
 # Tradeoff figure
 g <- val_sim %>%
   left_join(gr) %>%
-  tradeoff_grid(xname = "Natural Spawners", yname = "PNI", xlim = c(0, 4000), ylim = c(0, 1), ncol = 2)
+  tradeoff_grid(xname = "Natural Spawners", yname = "PNI", xlim = c(0, 4000), ylim = c(0, 1), ncol = 2) +
+  geom_vline(xintercept = 1300, linetype = 3) +
+  geom_hline(yintercept = 0.5, linetype = 3)
 ggsave(file.path(dir_dt, "tradeoff_PNI_sp.png"), g, width = 5, height = 5)
 
 
 g <- val_sim %>%
   left_join(gr) %>%
   tradeoff_grid(xname = "Releases", yname = "PNI", xlim = c(0, 5), ylim = c(0, 1),
-                ncol = 2, xlab = "Hatchery releases (100,000s)")
+                ncol = 2, xlab = "Hatchery releases (100,000s)") +
+  geom_hline(yintercept = 0.5, linetype = 3)
 ggsave(file.path(dir_dt, "tradeoff_PNI_rel.png"), g, width = 5, height = 5)
 
