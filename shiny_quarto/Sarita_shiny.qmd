@@ -1,0 +1,209 @@
+---
+title: "Sarita visualization app"
+author: "Q. Huynh, Blue Matter"
+date: "2025-11-27"
+format: html
+server: shiny
+---
+
+```{r}
+#| context: setup
+#| include: FALSE
+
+knitr::opts_chunk$set(
+  echo = FALSE
+)
+
+### Install packages ----
+pkg <- c("rmarkdown", "shiny", "shinyWidgets", "dplyr", "ggplot2", "here", "ggborderline", "reshape2")
+sapply(pkg, function(i) {
+  if (!i %in% installed.packages()) install.packages(i)
+})
+
+library(shiny)
+library(shinyWidgets)
+library(tidyverse)
+
+### Import functions ----
+fn_file <- "99-Sarita-results-functions.R"
+
+if (file.exists(here::here(fn_file))) {
+  source(here::here("99-Sarita-results-functions.R"))
+} else {
+  fn_file <- file.path(tempdir(), "99-Sarita-results-functions.R")
+  download.file(
+    "https://raw.githubusercontent.com/Blue-Matter/WCVI_Chinook/refs/heads/main/99-Sarita-results-functions.R",
+    fn_file
+  )
+  source(fn_file)
+}
+figure_height <- 600
+```
+
+
+```{r}
+#| context: data
+#| include: false
+
+### Grab array and convert to data frame, download if necessary ----
+var_plot <- c("Egg (10^6)", "Outmigrating juvenile (10^5)", #"Hatchery Release (10^5)",
+              "Preterminal catch", "Mature Return", "Terminal catch", "In-river Return",
+              "Brood", "In-river Catch", "Natural Spawners")
+val <- local({
+  
+  
+  if (dir.exists(here::here("tables")) && file.exists(here::here("tables/Sarita_app_results.rds"))) {
+    val_array <- readRDS(here::here("tables/Sarita_app_results.rds")) 
+  } else {
+    file_name <- file.path(tempdir(), "Sarita_app_results.rds")
+    download.file(
+      "https://github.com/Blue-Matter/WCVI_Chinook/raw/refs/heads/main/tables/Sarita_app_results.rds",
+      file_name
+    )
+    val_array <- readRDS(file_name)
+  }
+  
+  reshape2::melt(val_array) %>%
+    mutate(var_name = factor(var_name, var_plot))
+})
+```
+
+This webpage presents simulation results from the application of candidate management strategies for Sarita Chinook across alternative plausible scenarios. 
+Interactive results are intended to efficiently share comprehensive results with a working group when static figures may be cumbersome to distribute. 
+Figures below show outcomes from user selected scenario, management option, and subset of simulations.
+
+This document is rendered in Quarto and made interactive using Shiny.
+
+
+## Filter results {.tabset}
+
+Select one population scenario (A-E) and one management strategy (1-9).
+
+```{r}
+#| label: input-scenario
+inputPanel(
+  selectInput("OM", label = "Scenario",
+              choices = unique(val$Scenario), width = "200%"),
+  
+  selectInput("MP", label = "Management option",
+              choices = unique(val$scenario), width = "200%")
+)
+```
+
+### Spaghetti plot 
+
+#### All simulations
+
+```{r}
+#| label: fig-spaghetti
+#| fig-cap: "Time series lineplots of state variables for all simulations (grey lines) with annual median in blue."
+plotOutput("spaghetti", height = figure_height)
+```
+
+#### All simulations, by origin
+
+```{r}
+#| label: fig-spaghetti-origin
+#| fig-cap: "Time series lineplots of state variables by fish origin (colours) for all simulations (thin lines) with annual medians in solid lines."
+plotOutput("spaghetti_origin", height = figure_height)
+```
+
+#### Subset of simulations
+
+```{r}
+#| label: input-spaghetti-sim
+inputPanel(
+  #shinyWidgets::pickerInput( # Doesn't work in quarto
+  #  "Sim_spaghetti", label = "Simulation Number (up to 8 total)",
+  #  choices = unique(val$Simulation),
+  #  selected = seq(1, min(val$Simulation, 3)),
+  #  multiple = TRUE
+  #)
+  
+  selectInput(
+    "Sim_spaghetti", label = "Simulation Number (up to 8 total, select and delete to remove choices)",
+    choices = unique(val$Simulation),
+    selected = seq(1, min(val$Simulation, 3)),
+    multiple = TRUE,
+    width = "400px"
+  )
+)
+```
+
+```{r}
+#| label: fig-spaghetti-sim
+#| fig-cap: "Time series lineplots of state variables by a subset of simulations selected above."
+plotOutput("spaghetti_subset", height = figure_height)
+```
+
+### Barplots 
+
+```{r}
+#| label: input-barplot-sim
+inputPanel(
+  selectInput("Sim_barplot", label = "Simulation Number",
+              choices = unique(val$Simulation))
+)
+```
+
+```{r}
+#| label: fig-barplot
+#| fig-cap: "Time series stacked barplots of state variables by fish origin for an individual simulation."
+plotOutput("barplot", height = figure_height)
+```
+
+
+
+
+
+
+
+```{r}
+#| context: server
+
+val_plot_origin <- reactive({
+  dplyr::filter(
+    val,
+    Scenario == input$OM,
+    scenario == input$MP,
+    ifelse(var_name == "Outmigrating juvenile (10^5)", Year > 1, Year < max(.data$Year))
+  )
+})
+
+val_plot <- reactive({
+  val_plot_origin() %>%
+    summarise(value = sum(value, na.rm = TRUE), .by = c(Year, var_name, Scenario, scenario, Simulation))
+})
+
+output$spaghetti <- renderPlot({
+  plot_spaghetti(val_plot(), OM_name = input$OM, MP_name = input$MP)
+}, res = 100, height = figure_height)
+
+output$spaghetti_origin <- renderPlot({
+  plot_spaghetti(val_plot_origin(), OM_name = input$OM, MP_name = input$MP, by_origin = TRUE, alpha = 0.1)
+}, res = 100, height = figure_height)
+
+output$spaghetti_subset <- renderPlot({
+  plot_spaghetti(val_plot(), sims = input$Sim_spaghetti, OM_name = input$OM, MP_name = input$MP)
+}, res = 100, height = figure_height)
+
+val_plot_origin_sim <- reactive({
+  dplyr::filter(
+    val_plot_origin(),
+    Simulation == input$Sim_barplot
+  )
+})
+
+output$barplot <- renderPlot({
+  val_plot_origin_sim() %>%
+    ggplot(aes(Year, value)) +
+    facet_wrap(vars(var_name), scales = "free_y") +
+    geom_col(colour = "black", linewidth = 0.1, width = 1, alpha = 0.75, aes(fill = Origin)) +
+    expand_limits(y = 0) +
+    theme(strip.background = element_blank(), legend.position = "bottom") +
+    labs(y = NULL, fill = NULL, title = input$OM, subtitle = input$MP, caption = paste("Simulation", input$Sim_barplot))
+  
+}, res = 100, height = figure_height)
+```
+
+
