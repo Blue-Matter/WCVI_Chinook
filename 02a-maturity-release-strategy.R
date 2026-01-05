@@ -1,14 +1,14 @@
 
 library(salmonMSE)
 
-samp <- readRDS(file = "CM/Quinsam_CM_05.14.25.rds")
-report <- salmonMSE:::get_report(samp)
-d <- salmonMSE:::get_CMdata(samp@.MISC$CMfit)
+samp <- readRDS(file = "CM/Quinsam_CM_01.05.26.rds")
+report <- get_report(samp)
+d <- get_CMdata(samp@.MISC$CMfit)
 
 # Difference in maturity between release strategies
-g1 <- salmonMSE:::CM_maturity(report, d, year1 = 2005, r = 1) +
+g1 <- CM_maturity(report, d, year1 = 2005, r = 1) +
   ggtitle("Quinsam Fed Fry")
-g2 <- salmonMSE:::CM_maturity(report, d, year1 = 2005, r = 2) +
+g2 <- CM_maturity(report, d, year1 = 2005, r = 2) +
   ggtitle("Quinsam Smolt 0+")
 g <- ggpubr::ggarrange(g1, g2, common.legend = TRUE, legend = "bottom")
 ggsave("figures/Quinsam_maturity_RS.png", width = 6, height = 3)
@@ -50,8 +50,8 @@ g <- sapply(report, function(i) {
 ggsave("figures/Quinsam_CWT_esc_prop.png", g, height = 4, width = 4)
 
 # Compare maturity from Quinsam and RBT
-samp_RBT <- readRDS(file = "CM/Sarita_RBT_CM_10.03.25_pesc0.75.rds")
-report_RBT <- salmonMSE:::get_report(samp_RBT)
+samp_RBT <- readRDS(file = "CM/Sarita_RBT_CM_01.05.26_pesc0.75.rds")
+report_RBT <- get_report(samp_RBT)
 
 g_RBT <- salmonMSE:::CM_maturity(report_RBT, d = salmonMSE:::get_CMdata(samp_RBT@.MISC$CMfit),
                                  year1 = 1979, rs_names = "RBT Smolt 0+", annual = TRUE) %>%
@@ -81,7 +81,7 @@ calc_Sarita_fedfry_matt <- function(x, y, type = c("logit", "ratio")) { # x = re
   } else {
     matt_dev <- x$matt[, , 1]/x$matt[, , 2]
   }
-  i <- seq(1979, 2023) %in% seq(2005, 2023)
+  i <- seq(1979, 2023) %in% seq(2006, 2023)
 
   matt_new <- array(0, dim(x$matt)) # 1 = Fed fry, 2 = Smolt 0+
   matt_new[, , 2] <- y$matt[i, , 1] # Traditionals
@@ -97,7 +97,7 @@ calc_Sarita_fedfry_matt <- function(x, y, type = c("logit", "ratio")) { # x = re
   return(list(matt = matt_new))
 }
 
-matt_Sarita <- Map(calc_Sarita_fedfry_matt, x = report, y = report_RBT, type = "ratio")
+matt_Sarita <- Map(calc_Sarita_fedfry_matt, x = report[1:1000], y = report_RBT[1:1000], type = "ratio")
 saveRDS(matt_Sarita, file = "CM/Sarita_maturity.rds")
 matt_Sarita <- readRDS("CM/Sarita_maturity.rds")
 

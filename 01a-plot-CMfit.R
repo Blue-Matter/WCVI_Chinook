@@ -1,33 +1,36 @@
 
+library(salmonMSE)
+library(ggpubr)
+
 # These plots are all available in the markdown report
 p_esc <- 0.75
 
 # Get MCMC values
-samp <- readRDS(paste0("CM/Sarita_RBT_CM_10.03.25_pesc", p_esc, ".rds"))
-report <- salmonMSE:::get_report(samp)
+samp <- readRDS(paste0("CM/Sarita_RBT_CM_01.05.26_pesc", p_esc, ".rds"))
+report <- get_report(samp)
 
 # Get data
-d <- salmonMSE:::get_CMdata(samp@.MISC$CMfit)
+d <- get_CMdata(samp@.MISC$CMfit)
 
 # Plot maturity
-g <- salmonMSE:::CM_maturity(report, d, 1979, brood = FALSE, annual = TRUE) +
+g <- CM_maturity(report, d, 1979, brood = FALSE, annual = TRUE) +
   ggtitle("Calendar year maturity")
 ggsave("figures/Sarita_maturity_calendar.png", g, height = 8, width = 6)
 
-g <- salmonMSE:::CM_maturity(report, d, 1979, brood = TRUE, annual = TRUE) +
+g <- CM_maturity(report, d, 1979, brood = TRUE, annual = TRUE) +
   ggtitle("Brood year maturity")
 ggsave("figures/Sarita_maturity_brood.png", g, height = 8, width = 6)
 
-g <- salmonMSE:::CM_maturity(report, d, 1979, brood = TRUE, annual = FALSE)
+g <- CM_maturity(report, d, 1979, brood = TRUE, annual = FALSE)
 ggsave("figures/Sarita_maturity_summary.png", g, height = 3, width = 5)
 
-g <- salmonMSE:::CM_ts_origin(report, 1979, var = "Spawners")
+g <- salmonMSE:::CM_ts_origin(report, 1979, var = "Spawners", xlab = "Return Year")
 ggsave("figures/Sarita_spawners.png", g, height = 3, width = 5)
 
 
 # Plot F
-g1 <- salmonMSE:::CM_F(report, year1 = 1979)
-g2 <- salmonMSE:::CM_F(report, PT = FALSE, year1 = 1979)
+g1 <- CM_F(report, year1 = 1979)
+g2 <- CM_F(report, PT = FALSE, year1 = 1979)
 g <- ggpubr::ggarrange(g1, g2, ncol = 1)
 ggsave("figures/Sarita_F.png", g, height = 6, width = 4)
 
@@ -36,14 +39,14 @@ g2$data %>% filter(Year %in% 2016:2020) %>% mutate(u = 1 - exp(-`50%`)) %>% pull
 
 
 # Exploitation rate
-g3 <- salmonMSE:::CM_ER(report, brood = FALSE, type = "PT", year1 = 1979, at_age = FALSE)
-g4 <- salmonMSE:::CM_ER(report, brood = FALSE, type = "T", year1 = 1979, at_age = FALSE)
+g3 <- CM_ER(report, brood = FALSE, type = "PT", year1 = 1979, at_age = FALSE)
+g4 <- CM_ER(report, brood = FALSE, type = "T", year1 = 1979, at_age = FALSE)
 
-g5 <- salmonMSE:::CM_ER(report, brood = TRUE, type = "PT", year1 = 1979, at_age = FALSE)
-g6 <- salmonMSE:::CM_ER(report, brood = TRUE, type = "T", year1 = 1979, at_age = FALSE)
+g5 <- CM_ER(report, brood = TRUE, type = "PT", year1 = 1979, at_age = FALSE)
+g6 <- CM_ER(report, brood = TRUE, type = "T", year1 = 1979, at_age = FALSE)
 
-g7 <- salmonMSE:::CM_ER(report, brood = FALSE, type = "all", year1 = 1979, at_age = FALSE)
-g8 <- salmonMSE:::CM_ER(report, brood = TRUE, type = "all", year1 = 1979, at_age = FALSE)
+g7 <- CM_ER(report, brood = FALSE, type = "all", year1 = 1979, at_age = FALSE)
+g8 <- CM_ER(report, brood = TRUE, type = "all", year1 = 1979, at_age = FALSE)
 
 #g <- ggpubr::ggarrange(g1, g2, g3, g4, g5, g6, g7, g8, ncol = 2, nrow = 4,
 #                       labels = paste0("(", 1:8, ")"))
@@ -52,6 +55,12 @@ g8 <- salmonMSE:::CM_ER(report, brood = TRUE, type = "all", year1 = 1979, at_age
 g <- ggpubr::ggarrange(g3, g5, g4, g6, g7, g8, ncol = 2, nrow = 3,
                        labels = paste0("(", LETTERS[1:6], ")"))
 ggsave("figures/Sarita_ex.png", g, height = 7, width = 6)
+
+# Preterminal CYER
+ER_summary <- full_join(
+  g3$data %>% select(Year, `50%`) %>% rename(`Preterminal CYER` = `50%`),
+  g4$data %>% select(Year, `50%`) %>% rename(`Terminal CYER` = `50%`)
+) %>% round(2)
 
 
 # Compare exploitation rates to CTC model
@@ -63,13 +72,13 @@ g <- salmonMSE:::CM_ER(report, type = "PT", year1 = 1979, at_age = TRUE) +
   facet_wrap(vars(Age), scales = "free_y") +
   geom_line(data = ctc, aes(y = preterminal_er), colour = "red") +
   guides(colour = guide_legend(title = "Model"))
-g$data %>% filter(Year %in% c(2013:2018), Age == "Age 5") %>% pull(`50%`) %>% mean()
+g$data %>% filter(Year %in% c(2013:2018), Age == "Age 5") %>% pull(`50%`) %>% mean() # 0.43
 ggsave(paste0("figures/Sarita_ex_PT_CTC_pesc", p_esc, ".png"), g, height = 4, width = 6)
 
 g <- salmonMSE:::CM_ER(report, type = "T", year1 = 1979, at_age = TRUE) +
   facet_wrap(vars(Age), scales = "free_y") +
   geom_line(data = ctc, aes(y = terminal_er), colour = "red")
-g$data %>% filter(Year %in% c(2013:2018), Age == "Age 5") %>% pull(`50%`) %>% mean()
+g$data %>% filter(Year %in% c(2013:2018), Age == "Age 5") %>% pull(`50%`) %>% mean() # 0.24
 ggsave(paste0("figures/Sarita_ex_T_CTC_pesc", p_esc, ".png"), g, height = 4, width = 6)
 
 #g <- salmonMSE:::CM_ER(report, brood = FALSE, type = "all", year1 = 1979, at_age = FALSE)

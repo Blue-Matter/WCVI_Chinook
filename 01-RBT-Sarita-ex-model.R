@@ -42,7 +42,7 @@ if (FALSE) {
   legend("topleft", c("Broodtake", "Brood + Holding Mortality + Other"), col = 1:2, pch = c(1, 16), lty = 1, bty = "n")
   dev.off()
 
-  g <- sarita_rel %>% reshape2::melt(id.vars = "Year") %>%
+  g <- rel %>% reshape2::melt(id.vars = "Year") %>%
     ggplot(aes(Year, value, colour = variable)) +
     geom_line() +
     geom_point()
@@ -51,7 +51,8 @@ if (FALSE) {
 # CWT data from RBT
 # broodyear 1973 - 2021
 # runyear 1975-2023
-cwt_dat <- readr::read_csv("data/RBT_data_wfisheries.csv")
+cwt_dat <- readr::read_csv("data/RBT_data_wfisheries.csv") %>%
+  mutate(RelYear = BroodYear + 1)
 #problems(dat)
 cwt_dat[c(1013, 2273), ]
 
@@ -59,14 +60,14 @@ cwt_dat[c(1013, 2273), ]
 
 # Full matrix of ages (1-5) and years (1979 - 2023)
 full_matrix <- expand.grid(
-  BroodYear = 1979:2023,
+  RelYear = 1979:2023,
   Age = 1:5
 ) %>%
   as.data.frame()
-full_year <- data.frame(BroodYear = 1979:2023)
+full_year <- data.frame(RelYear = 1979:2023)
 
 # Escapement  + broodtake
-esc_sarita <- filter(esc, year %in% full_year$BroodYear) %>%
+esc_sarita <- filter(esc, year %in% full_year$RelYear) %>%
   left_join(brood %>% select(Year, Broodtake), by = c("year" = "Year")) %>%
   mutate(Broodtake = ifelse(is.na(Broodtake), 0, Broodtake)) %>%
   rename(spawners = escapement) %>%
@@ -80,16 +81,16 @@ rel_sarita$Total[is.na(rel_sarita$Total)] <- 0
 
 # CWT releases by tag code
 cwt_rel <- cwt_dat %>%
-  summarise(CWTMark1Count = unique(CWTMark1Count), .by = c(TagCode, BroodYear)) %>%
-  arrange(BroodYear, TagCode)
+  summarise(CWTMark1Count = unique(CWTMark1Count), .by = c(TagCode, RelYear)) %>%
+  arrange(RelYear, TagCode)
 
 # Annual CWT releases
 cwt_rel_annual <- cwt_rel %>%
-  summarise(rel = sum(CWTMark1Count), .by = BroodYear) %>%
+  summarise(rel = sum(CWTMark1Count), .by = RelYear) %>%
   right_join(full_year) %>%
   mutate(rel = ifelse(is.na(rel), 0, rel))
 
-g <- ggplot(cwt_rel_annual, aes(BroodYear, rel)) +
+g <- ggplot(cwt_rel_annual, aes(RelYear - 1, rel)) +
   geom_point() +
   geom_line() +
   labs(x = "Brood Year", y = "Robertson Creek CWT releases")
@@ -98,26 +99,26 @@ g <- ggplot(cwt_rel_annual, aes(BroodYear, rel)) +
 # Remove strays ----
 cwt_esc1 <- cwt_dat %>%
   filter(fishery_type == "escapement", Coarse_description %in% c("Escapement", "Subsistence")) %>%
-  summarise(n = sum(AdjustedEstimatedNumber), .by = c(BroodYear, Age))
+  summarise(n = sum(AdjustedEstimatedNumber), .by = c(RelYear, Age))
 
 # Assign x percent of Southern WCVI Terminal Net fishery to escapement
 # Sarita fish are less vulnerable to this fishery compared to RBT
 p_esc <- 0.75
 cwt_esc2 <- cwt_dat %>%
   filter(fishery_type == "terminal", Coarse_description == "Southwest WCVI Terminal Net") %>%
-  summarise(n = sum(p_esc * AdjustedEstimatedNumber), .by = c(BroodYear, Age))
+  summarise(n = sum(p_esc * AdjustedEstimatedNumber), .by = c(RelYear, Age))
 
 cwt_esc <- rbind(cwt_esc1, cwt_esc2) %>%
-  summarise(n = sum(n), .by = c(BroodYear, Age)) %>%
-    right_join(full_matrix, by = c("BroodYear", "Age")) %>%
-    reshape2::acast(list("BroodYear", "Age"), value.var = "n", fill = 0)
+  summarise(n = sum(n), .by = c(RelYear, Age)) %>%
+    right_join(full_matrix, by = c("RelYear", "Age")) %>%
+    reshape2::acast(list("RelYear", "Age"), value.var = "n", fill = 0)
 
 # Preterminal CWT
 cwt_pt <- cwt_dat %>%
   filter(fishery_type == "pre-terminal", Age < 7) %>%
-  summarise(n = sum(AdjustedEstimatedNumber), .by = c(BroodYear, Age)) %>%
-  right_join(full_matrix, by = c("BroodYear", "Age")) %>%
-  reshape2::acast(list("BroodYear", "Age"), value.var = "n", fill = 0)
+  summarise(n = sum(AdjustedEstimatedNumber), .by = c(RelYear, Age)) %>%
+  right_join(full_matrix, by = c("RelYear", "Age")) %>%
+  reshape2::acast(list("RelYear", "Age"), value.var = "n", fill = 0)
 
 # Terminal CWT
 # Remove strays ----
@@ -126,23 +127,23 @@ cwt_pt <- cwt_dat %>%
 cwt_t <- cwt_dat %>%
   filter(fishery_type == "terminal", grepl("TWCVI", ERA_fishery_name)) %>%
   mutate(p_catch = ifelse(Coarse_description == "Southwest WCVI Terminal Net", 1 - p_esc, 1)) %>%
-  summarise(n = sum(p_catch * AdjustedEstimatedNumber), .by = c(BroodYear, Age)) %>%
-  right_join(full_matrix, by = c("BroodYear", "Age")) %>%
-  reshape2::acast(list("BroodYear", "Age"), value.var = "n", fill = 0)
+  summarise(n = sum(p_catch * AdjustedEstimatedNumber), .by = c(RelYear, Age)) %>%
+  right_join(full_matrix, by = c("RelYear", "Age")) %>%
+  reshape2::acast(list("RelYear", "Age"), value.var = "n", fill = 0)
 
 # Plot CWT data
-cwt_plot <- rbind(
-  cwt_esc %>% reshape2::melt() %>% mutate(type = "Escapement"),
-  cwt_pt %>% reshape2::melt() %>% mutate(type = "Preterminal catch"),
-  cwt_t %>% reshape2::melt() %>% mutate(type = "Terminal catch")
-) %>%
-  rename(BroodYear = Var1, Age = Var2, n = value) %>%
-  mutate(p = n/sum(n, na.rm = TRUE), .by = c(BroodYear, type))
-
 if (FALSE) {
+  cwt_plot <- rbind(
+    cwt_esc %>% reshape2::melt() %>% mutate(type = "Escapement"),
+    cwt_pt %>% reshape2::melt() %>% mutate(type = "Preterminal catch"),
+    cwt_t %>% reshape2::melt() %>% mutate(type = "Terminal catch")
+  ) %>%
+    rename(RelYear = Var1, Age = Var2, n = value) %>%
+    mutate(p = n/sum(n, na.rm = TRUE), .by = c(RelYear, type))
+
   g <- cwt_plot %>%
     filter(!is.na(p)) %>%
-    ggplot(aes(BroodYear, p, fill = factor(Age, levels = 5:2))) +
+    ggplot(aes(RelYear - 1, p, fill = factor(Age, levels = 5:2))) +
     facet_wrap(vars(type), ncol = 1) +
     geom_col(width = 1, colour = "grey40", linewidth = 0.1) +
     scale_fill_brewer(palette = "Set2") +
@@ -156,7 +157,7 @@ if (FALSE) {
 
   g <- cwt_plot %>%
     filter(!is.na(p)) %>%
-    ggplot(aes(BroodYear, n, fill = factor(Age, levels = 5:2))) +
+    ggplot(aes(RelYear - 1, n, fill = factor(Age, levels = 5:2))) +
     facet_wrap(vars(type), ncol = 1) +
     geom_col(width = 1, colour = "grey40", linewidth = 0.1) +
     scale_fill_brewer(palette = "Set2") +
@@ -185,14 +186,15 @@ M_CTC <- -log(surv)
 fec_Sarita <- c(0, 1500, 3000, 3600, 4600)
 
 # Expansion factors for CWT
-#cwt_dat %>%
-#  mutate(EstimatedNumber = as.numeric(EstimatedNumber),
-#         Exp = AdjustedEstimatedNumber/EstimatedNumber) %>%
-#  select(EstimatedNumber, Exp, ExpansionFactor) %>%
-#  filter(Exp < 2) %>%
-#  pull(Exp) %>%
-#  hist(breaks = 50)
-
+if (FALSE) {
+  cwt_dat %>%
+    mutate(EstimatedNumber = as.numeric(EstimatedNumber),
+           Exp = AdjustedEstimatedNumber/EstimatedNumber) %>%
+    select(EstimatedNumber, Exp, ExpansionFactor) %>%
+    filter(Exp < 2) %>%
+    pull(Exp) %>%
+    hist(breaks = 50)
+}
 
 # Model assumption of catch expansion factor
 # Use alternative values to change data weighting of CWT (re-adjust numbers accordingly)
@@ -252,13 +254,46 @@ start <- list(log_so = log(3 * max(d$obsescape)))
 
 # Fit with sampling rate = 1
 fit <- fit_CM(d, start = start, map = map, do_fit = TRUE)
-#dat <- salmonMSE:::get_CMdata(fit)
 samp <- sample_CM(fit, chains = 3, cores = 3, iter = 10000, thin = 5)
-#samp <- sample_CM(fit, chains = 2, cores = 2, iter = 10000, thin = 5)
-saveRDS(samp, file = paste0("CM/Sarita_RBT_CM_10.03.25_pesc", p_esc, ".rds"))
+saveRDS(samp, file = paste0("CM/Sarita_RBT_CM_01.05.26_pesc", p_esc, ".rds"))
 
-samp <- readRDS(paste0("CM/Sarita_RBT_CM_10.03.25_pesc", p_esc, ".rds"))
-salmonMSE::report_CM(samp, dir = "CM", filename = paste0("Sarita_10.03_pesc", p_esc),
-                     year = full_year$BroodYear, name = "Sarita (RBT CWT)")
+samp <- readRDS(paste0("CM/Sarita_RBT_CM_01.05.26_pesc", p_esc, ".rds"))
+salmonMSE::report_CM(samp, dir = "CM", filename = paste0("Sarita_01.05_pesc", p_esc),
+                     year = full_year$RelYear, name = "Sarita (RBT CWT)")
 
-#shinystan::launch_shinystan(samp)
+if (FALSE) { # Diagnostic figures do not run when sourcing file
+
+  # Check fits quickly
+  report <- salmonMSE::get_report(samp)
+  d <- salmonMSE::get_CMdata(samp@.MISC$CMfit)
+  CM_fit_esc(report, d)
+
+  # Compare brood year pHOS when not fitted
+  year <- unique(full_year$RelYear)
+  salmonMSE:::.CM_ts(report, year1 = min(year), var = "pHOScensus_brood", ci = TRUE, ylab = "pHOScensus")
+  salmonMSE:::.CM_ts(report, year1 = min(year), var = "pHOScensus", ci = TRUE, ylab = "pHOS")
+
+  CM_F(report)
+  CM_surv2(report) # Survival to age 2
+
+  CM_maturity(report, d, brood = FALSE)
+  CM_M(report)
+  CM_SRR(report, year1 = min(year))
+
+  # Quickly check convergence
+  CM_trace(samp)
+  CM_pairs(samp, c("log_so", "log_cr"))
+
+  # Launch full Stan app, this function frees up console whilst using the Shiny app
+  launch_shinystan2 <- function(fit) {
+    require(future)
+    plan(multisession)
+    future(
+      shinystan::launch_shinystan(fit)
+    )
+  }
+  launch_shinystan2(samp)
+  #shinystan::launch_shinystan(samp)
+
+}
+
