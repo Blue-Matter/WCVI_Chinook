@@ -10,7 +10,7 @@ proyears <- 30
 n_g <- 2
 
 # Load exploitation rate model - Sarita (with Robertson CWT traditionals)
-ERM_Sarita <- readRDS("CM/Sarita_RBT_CM_10.03.25_pesc0.75.rds")
+ERM_Sarita <- readRDS("CM/Sarita_RBT_CM_01.05.26_pesc0.75.rds")
 report_RBT <- salmonMSE:::get_report(ERM_Sarita) # Removes warmup and thinned samples
 
 # Take maturity average from the 6 most recent brood years (2013-2018)
@@ -123,8 +123,8 @@ sarita_rel <- readxl::read_excel(
 
 # 2023 releases
 sarita_rel %>%
-  summarise(marked = sum(), n = sum(TotalRelease), .by = c(RELEASE_STAGE_NAME, BROOD_YEAR)) %>%
-  filter(BROOD_YEAR == 2023)
+  summarise(marked = sum(), n = sum(TotalRelease), .by = c(RELEASE_STAGE_NAME, RELEASE_YEAR)) %>%
+  filter(RELEASE_YEAR == 2023)
 
 stray <- c(0, 0.11, 0.16, 0.69, 0.04) * 100 # Proportions based on Sarita CWT escapement of traditionals in 2018
 h2 <- EnvStats::rnormTrunc(nsim, 0.25, 0.15, min = 0, max = 0.5)
@@ -171,8 +171,8 @@ Hatchery <- new(
 
 # Calculate HistNjuv_NOS (which return year?)
 nyears_cm <- 45 - 5 # Sample abundance from final year with complete brood life cycle
-Njuv_CM <- sapply(report_RBT[sim_samp], function(x) x$N[nyears_cm + 1, , ],
-                  simplify = "array")
+#Njuv_CM <- sapply(report_RBT[sim_samp], function(x) x$N[nyears_cm + 1, , ],
+#                  simplify = "array")
 
 # Assume 50-50 ratio of spawners by life history group and release strategy
 NOS <- sapply(report_RBT[sim_samp], function(x) x$syear[seq(nyears_cm - nyears + 1, nyears_cm), , 1],
@@ -245,26 +245,34 @@ Historical <- new(
 fry_surv <- read.csv("data/Sarita/fry_surv.csv")
 fry_surv_year <- read.csv("data/Sarita/fry_surv_year.csv")
 
+#### Get variation in historical freshwater survival
+fry_surv_year <- fry_surv_year %>%
+  mutate(fpe = y/3900/0.4)
+
+fry_surv_year %>%
+  summarise(m = mean(fpe), sd = sd(fpe))
+
 # Log-linear regression to reproduce Figure 3.7 of Brown et al. Res Doc
 if (FALSE) {
   fit <- lm(log(y) ~ x, fry_surv_year)
   xpred <- seq(0, 100)
   ypred <- predict(fit, newdata = data.frame(x = xpred), se.fit = TRUE)
 
-  g <- data.frame(
-    xpred = xpred,
-    ypred = ypred
-  ) %>%
-    mutate(lower = ypred.fit - 1.96 * ypred.se.fit,
-           upper = ypred.fit + 1.96 * ypred.se.fit) %>%
-    ggplot(aes(xpred, exp(ypred.fit))) +
-    geom_ribbon(aes(ymin = exp(lower), ymax = exp(upper)), colour = NA, fill = "grey80") +
-    geom_line() +
-    geom_point(data = fry_surv_year, aes(x, y)) +
-    geom_label(data = fry_surv_year, aes(x, y, label = year), vjust = "bottom", hjust = "left") +
-    labs(x = expression("Percent Days in October with Flow > 5"~~(m^3/sec)),
-         y = "Fry Per Returning Adult") +
-    coord_cartesian(xlim = c(0, 105))
+  #g <- data.frame(
+  #  xpred = xpred,
+  #  ypred = ypred
+  #) %>%
+  #  mutate(lower = ypred.fit - 1.96 * ypred.se.fit,
+  #         upper = ypred.fit + 1.96 * ypred.se.fit) %>%
+  #  ggplot(aes(xpred, exp(ypred.fit))) +
+  #  geom_ribbon(aes(ymin = exp(lower), ymax = exp(upper)), colour = NA, fill = "grey80") +
+  #  geom_line() +
+  #  geom_point(data = fry_surv_year, aes(x, y)) +
+  #  geom_label(data = fry_surv_year, aes(x, y, label = year), vjust = "bottom", hjust = "left") +
+  #  labs(x = expression("Percent Days in October with Flow > 5"~~(m^3/sec)),
+  #       y = "Fry Per Returning Adult") +
+  #  coord_cartesian(xlim = c(0, 105))
+
   g <- ggplot(fry_surv, aes(x, median)) +
     geom_ribbon(aes(ymin = lwr, ymax = upr), colour = NA, fill = "grey80") +
     geom_line() +
@@ -277,42 +285,85 @@ if (FALSE) {
     coord_cartesian(xlim = c(10, 105))
   ggsave("figures/Sarita-fry-survival.png", g, height = 4, width = 6)
 
-  g <- ggplot(fry_surv_year, aes(year, x)) +
+  g <- fry_surv_year %>%
+    select(year, y, fpe) %>%
+    rename(`Fry/Return` = y, Survival = fpe) %>%
+    reshape2::melt(id.vars = "year") %>%
+    ggplot(aes(year, value)) +
     geom_point() +
     geom_line() +
     expand_limits(y = 0) +
-    labs(x = "Year", y = "Fry/spawner")
+    facet_wrap(vars(variable), ncol = 1, scales = "free_y", strip.position = "left") +
+    labs(x = "Year", y = NULL) +
+    theme(strip.placement = "outside", strip.background = element_blank())
+  ggsave("figures/Sarita-fry-survival-ts.png", g, height = 4, width = 4)
 }
 
-
-# Average conditions 2017-2023 (x = environmental variable, y = fry/spawner)
+#### Code used to stochastically simulate freshwater survival from historical October flow
+#### Not used as of January 5, 2026
+#### Average conditions 2017-2023 (x = environmental variable, y = fry/spawner)
 #mean(fry_surv_year$x)
-
-get_eggfry_surv <- function(env_series, seed = 342, avg_fec = 3900, p_female = 0.4, nsim = 100) {
-  set.seed(seed)
-
-  fps_sim <- lapply(1:nsim, function(x) {
-    data.frame(
-      year = seq(1, proyears),
-      x = env_series
-    ) %>%
-      mutate(Simulation = .env$x)
-  }) %>%
-    bind_rows() %>%
-    left_join(fry_surv) %>%
-    mutate(fps = rlnorm(nrow(.), log(median), sd_lower)) %>%
-    mutate(fpe = fps/avg_fec/p_female)
-
-  return(fps_sim)
-
-}
-env_series <- rep(60, proyears)
-
-sim_surv <- get_eggfry_surv(env_series, nsim = nsim)
+#get_eggfry_surv <- function(env_series, seed = 342, avg_fec = 3900, p_female = 0.4, nsim = 100) {
+#  set.seed(seed)
+#
+#  fps_sim <- lapply(1:nsim, function(x) {
+#    data.frame(
+#      year = seq(1, proyears),
+#      x = env_series
+#    ) %>%
+#      mutate(Simulation = .env$x)
+#  }) %>%
+#    bind_rows() %>%
+#    left_join(fry_surv) %>%
+#    mutate(fps = rlnorm(nrow(.), log(median), sd_lower)) %>%
+#    mutate(fpe = fps/avg_fec/p_female)
+#
+#  return(fps_sim)
+#
+#}
+#env_series <- rep(60, proyears)
+#sim_surv <- get_eggfry_surv(env_series, nsim = nsim)
 #fps <- reshape2::acast(sim_surv, list("Simulation", "year"), value.var = "fps")
-fpe <- reshape2::acast(sim_surv, list("Simulation", "year"), value.var = "fpe")
+#fpe <- reshape2::acast(sim_surv, list("Simulation", "year"), value.var = "fpe")
 #matplot(t(fps), typ = 'l')
 #matplot(t(fpe), typ = 'l')
+
+# CV = 0.79
+fry_surv_sd <- fry_surv_year %>%
+  summarise(m = mean(qlogis(fpe)), sd = sd(qlogis(fpe))) %>%
+  pull(sd) %>%
+  round(2)
+
+set.seed(234)
+fry_surv_sim <- lapply(c(0.1, 0.2, 0.3), function(m) {
+  samp <- rnorm(nsim * proyears, qlogis(m), fry_surv_sd) %>% matrix(nsim, proyears)
+  samp_trans <- plogis(samp)
+  samp_trans/mean(samp_trans) * m
+})
+
+if (FALSE) {
+
+  fry_surv_sim %>% lapply(mean)
+  fry_surv_sim %>% lapply(sd)
+
+  png("figures/Sarita-fry-survival-sim.png", height = 6, width = 5, units = "in", res = 400)
+  par(mfrow = c(3, 1), mar = c(2, 3, 3, 1), oma = c(3, 1.5, 0, 0))
+  matplot(fry_surv_sim[[1]][1:3, ] %>% t(),
+          main = "10% mean survival",
+          type = "l", lty = 1, panel.first = grid(), ylim = c(0, 1), ylab = "")
+  matplot(fry_surv_sim[[2]][1:3, ] %>% t(),
+          main = "20% mean survival",
+          type = "l", lty = 1, panel.first = grid(), ylim = c(0, 1), ylab = "")
+  matplot(fry_surv_sim[[3]][1:3, ] %>% t(),
+          main = "30% mean survival",
+          type = "l", lty = 1, panel.first = grid(), ylim = c(0, 1), ylab = "")
+  mtext("Projection year", side = 1, outer = TRUE, line = 1)
+  mtext("Freshwater survival", side = 2, outer = TRUE, line = 0)
+  dev.off()
+
+}
+
+
 
 Habitat <- new(
   "Habitat",
@@ -320,95 +371,32 @@ Habitat <- new(
   fry_rel = "BH",
   fry_prod = 1,
   fry_capacity = Inf,
-  fry_sdev = fpe
+  fry_sdev = fry_surv_sim[[1]]
 )
 
 
-SOM <- new("SOM",
-           Name = "Sarita base, 2 LHG, 2 RS",
-           nsim = nsim,
-           nyears = nyears,
-           proyears = proyears,
-           seed = 1,
-           Bio = Bio,
-           Habitat = Habitat,
-           Hatchery = Hatchery,
-           Harvest = Harvest,
-           Historical = Historical)
-saveRDS(SOM, "SOM/SOM_averagesurv.rds") # Not used!
+SOM_low <- new("SOM",
+               Name = "Sarita base, 2 LHG, 2 RS",
+               nsim = nsim,
+               nyears = nyears,
+               proyears = proyears,
+               seed = 1,
+               Bio = Bio,
+               Habitat = Habitat,
+               Hatchery = Hatchery,
+               Harvest = Harvest,
+               Historical = Historical)
+saveRDS(SOM_low, "SOM/SOM_lowsurv.rds")
+
+SOM_medium <- SOM_low
+SOM_medium@Habitat@fry_sdev <- fry_surv_sim[[2]]
+saveRDS(SOM_medium, "SOM/SOM_mediumsurv.rds")
+
+SOM_high <- SOM_low
+SOM_high@Habitat@fry_sdev <- fry_surv_sim[[3]]
+saveRDS(SOM_high, "SOM/SOM_highsurv.rds")
 
 
-# Scenario with high fry/spawner
-env_series_high <- rep(80, proyears)
-sim_surv2 <- get_eggfry_surv(env_series_high)
-fpe2 <- reshape2::acast(sim_surv2, list("Simulation", "year"), value.var = "fpe")
-
-#matplot(t(fpe2), typ = 'l', ylab = "Egg-fry survival", xlab = "Projection  year", ylim = c(0, 0.4))
-SOM2 <- SOM
-SOM2@Habitat@fry_sdev <- fpe2
-saveRDS(SOM2, "SOM/SOM_highsurv.rds")
-
-# Scenario with low fry/spawner
-env_series_low <- rep(40, proyears)
-sim_surv3 <- get_eggfry_surv(env_series_low)
-fpe3 <- reshape2::acast(sim_surv3, list("Simulation", "year"), value.var = "fpe")
-
-#matplot(t(fpe3), typ = 'l', ylab = "Egg-fry survival", xlab = "Projection  year", ylim = c(0, 0.4))
-SOM3 <- SOM
-SOM3@Habitat@fry_sdev <- fpe3
-saveRDS(SOM3, "SOM/SOM_lowsurv.rds")
-
-# Scenario that samples the full range of egg-fry survival
-sim_surv_bootstrap <- lapply(1:nsim, function(i) {
-  env_series_bootstrap <- sample(fry_surv_year$x, size = proyears, replace = TRUE) %>%
-    round()
-  df <- get_eggfry_surv(env_series_bootstrap, seed = 3 * i, nsim = 1)
-  df$Simulation[] <- i
-  return(df)
-}) %>%
-  bind_rows()
-fpe_bootstrap <- reshape2::acast(sim_surv_bootstrap, list("Simulation", "year"), value.var = "fpe")
-
-if (FALSE) {
-
-  png("figures/Sarita_envvar_bootstrap.png", height = 6, width = 5, res = 400, units = "in")
-
-  envvar <- reshape2::acast(sim_surv_bootstrap, list("Simulation", "year"), value.var = "x")
-
-  par(mar = c(5, 4, 1, 1), mfrow = c(2, 1))
-  matplot(t(envvar[1:3, ]), typ = 'l', ylab = "Environmental variable",
-          panel.first = grid(),
-          xlab = "Projection year", ylim = c(0, 100),
-          lty = 1)
-
-  matplot(t(fpe_bootstrap[1:3, ]), typ = 'l', ylab = "Egg-fry survival",
-          panel.first = grid(),
-          xlab = "Projection year", ylim = c(0, 1), lty = 1)
-
-  dev.off()
-
-
-  png("figures/Sarita_envvar.png", height = 7, width = 6, res = 400, units = "in")
-  par(mar = c(5, 4, 2, 1), mfrow = c(2, 1))
-  matplot(t(fpe2[1:3, ]), typ = 'l', panel.first = grid(),
-          ylab = "Egg-fry survival",
-          xlab = "Projection year", ylim = c(0, 0.3), lty = 1)
-  title("(B) Above-average freshwater survival")
-  #mean(fpe2)
-
-  matplot(t(fpe3[1:3, ]), typ = 'l', panel.first = grid(),
-          ylab = "Egg-fry survival",
-          xlab = "Projection year", ylim = c(0, 0.3), lty = 1)
-  title("(C) Below-average freshwater survival")
-  #mean(fpe3)
-  dev.off()
-
-}
-
-matplot(t(fpe_bootstrap[1:3, ]), type = 'l', ylab = "Egg-fry survival", xlab = "Projection year", ylim = c(0, 1))
-SOM4 <- SOM
-SOM4@Habitat@fry_sdev <- fpe_bootstrap
-saveRDS(SOM4, "SOM/SOM_surv_bootstrap.rds")
 
 
 # Scenario with declining maturity and fecundity
@@ -430,21 +418,20 @@ matt_slope <- matt_med[seq(12, 40), ] %>%
   filter(is.finite(value)) %>%
   summarise(slope = lm(value ~ Year) %>% coef() %>% getElement(2), .by = Age)
 
-SOM5 <- SOM4
+SOM_decfec <- SOM_medium
 for (i in matt_slope$Age) {
-  matt_i <- matrix(qlogis(SOM5@Bio@p_mature[, i, SOM5@nyears]), SOM5@nsim, SOM5@proyears)
-  for (y in 2:SOM5@proyears) {
+  matt_i <- matrix(qlogis(SOM_decfec@Bio@p_mature[, i, SOM_decfec@nyears]), SOM_decfec@nsim, SOM_decfec@proyears)
+  for (y in 2:SOM_decfec@proyears) {
     matt_i[, y] <- matt_i[, 1] + matt_slope$slope[matt_slope$Age == i] * y
   }
-  SOM5@Bio@p_mature[, i, SOM5@nyears + seq(1, SOM5@proyears)] <- plogis(matt_i)
+  SOM_decfec@Bio@p_mature[, i, SOM_decfec@nyears + seq(1, SOM_decfec@proyears)] <- plogis(matt_i)
 
-  for (r in SOM5@Hatchery@n_r) {
-
-    matt_i <- matrix(qlogis(SOM5@Hatchery@p_mature_HOS[, i, SOM5@nyears, r]), SOM5@nsim, SOM5@proyears)
-    for (y in 2:SOM5@proyears) {
+  for (r in SOM_decfec@Hatchery@n_r) {
+    matt_i <- matrix(qlogis(SOM_decfec@Hatchery@p_mature_HOS[, i, SOM_decfec@nyears, r]), SOM_decfec@nsim, SOM_decfec@proyears)
+    for (y in 2:SOM_decfec@proyears) {
       matt_i[, y] <- matt_i[, 1] + matt_slope$slope[matt_slope$Age == i] * y
     }
-    SOM5@Hatchery@p_mature_HOS[, i, SOM5@nyears + seq(1, SOM5@proyears), r] <- plogis(matt_i)
+    SOM_decfec@Hatchery@p_mature_HOS[, i, SOM_decfec@nyears + seq(1, SOM_decfec@proyears), r] <- plogis(matt_i)
   }
 
 }
@@ -459,9 +446,9 @@ for (a in 3:5) {
     byrow = TRUE
   )
 }
-SOM5@Bio@fec <- fec_decline
-SOM5@Hatchery@fec_brood <- fec_decline
-saveRDS(SOM5, "SOM/SOM_declinematfec.rds")
+SOM_decfec@Bio@fec <- fec_decline
+SOM_decfec@Hatchery@fec_brood <- fec_decline
+saveRDS(SOM_decfec, "SOM/SOM_declinematfec.rds")
 
 
 if (FALSE) {
@@ -470,17 +457,17 @@ if (FALSE) {
   png("figures/SMSE/maturity_vul.png", height = 6, width = 3, units = "in", res = 400)
   par(mfrow = c(3, 1), mar = c(5, 4, 1, 1))
 
-  salmonMSE:::plot_Mjuv_RS(SOM@Hatchery@p_mature_HOS[, , 1, ],
+  salmonMSE:::plot_Mjuv_RS(SOM_low@Hatchery@p_mature_HOS[, , 1, ],
                            RS_names = c("Fed Fry", "Traditionals"), ylab = "Proportion mature")
 
-  salmonMSE:::plot_SOM(SOM@Harvest, "vulPT",
-                       type = "age", nsim = SOM@nsim, maxage =  SOM@Bio@maxage,
-                       nyears = SOM@nyears, proyears = SOM@proyears,
+  salmonMSE:::plot_SOM(SOM_low@Harvest, "vulPT",
+                       type = "age", nsim = SOM_low@nsim, maxage = SOM_low@Bio@maxage,
+                       nyears = SOM_low@nyears, proyears = SOM_low@proyears,
                        ylab = "Juvenile fishery vulnerability")
 
   salmonMSE:::plot_SOM(SOM@Harvest, "vulT",
-                       type = "age", nsim = SOM@nsim, maxage =  SOM@Bio@maxage,
-                       nyears = SOM@nyears, proyears = SOM@proyears,
+                       type = "age", nsim = SOM_low@nsim, maxage = SOM_low@Bio@maxage,
+                       nyears = SOM_low@nyears, proyears = SOM_low@proyears,
                        ylab = "Terminal fishery vulnerability")
 
   dev.off()
@@ -488,9 +475,9 @@ if (FALSE) {
   #### Time-varying maturity and fecundity ----
   matt_new <- lapply(1:length(sim_samp), function(x) {
     out <- report_RBT[[sim_samp[x]]]["matt"]
-    matt_proj <- SOM@Hatchery@p_mature_HOS[x, , SOM3@nyears + seq(1, SOM3@proyears), 2] %>%
+    matt_proj <- SOM_low@Hatchery@p_mature_HOS[x, , SOM_low@nyears + seq(1, SOM_low@proyears), 2] %>%
       t() %>%
-      array(c(SOM3@proyears, maxage, 1))
+      array(c(SOM_low@proyears, maxage, 1))
     out$matt <- abind::abind(out$matt, matt_proj, along = 1)
     return(out)
   })
@@ -501,9 +488,9 @@ if (FALSE) {
 
   matt_new <- lapply(1:length(sim_samp), function(x) {
     out <- report_RBT[[sim_samp[x]]]["matt"]
-    matt_proj <- SOM3@Hatchery@p_mature_HOS[x, , SOM3@nyears + seq(1, SOM3@proyears), 2] %>%
+    matt_proj <- SOM_decfec@Hatchery@p_mature_HOS[x, , SOM_decfec@nyears + seq(1, SOM_decfec@proyears), 2] %>%
       t() %>%
-      array(c(SOM3@proyears, maxage, 1))
+      array(c(SOM_decfec@proyears, maxage, 1))
     out$matt <- abind::abind(out$matt, matt_proj, along = 1)
     return(out)
   })
@@ -514,7 +501,7 @@ if (FALSE) {
   g <- ggpubr::ggarrange(g1, g2, ncol = 1, common.legend = TRUE, legend = "right")
   ggsave("figures/SMSE/Sarita_proj_maturity.png", g, height = 6, width = 6)
 
-  g <- (SOM5@Bio@fec[1, , ]/p_female) %>%
+  g <- (SOM_decfec@Bio@fec[1, , ]/p_female) %>%
     reshape2::melt() %>%
     rename(Age = Var1, Year = Var2) %>%
     filter(Age > 1) %>%
@@ -523,9 +510,4 @@ if (FALSE) {
     geom_point() +
     labs(y = "Fecundity", colour = "Age")
   ggsave("figures/SMSE/Sarita_decline_fecundity.png", g, height = 3, width = 5)
-
-
-
-
-
 }

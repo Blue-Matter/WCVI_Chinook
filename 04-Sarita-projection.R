@@ -3,22 +3,30 @@
 # First, create grid of pNOB target and in-river exploitation rate target
 # Default
 library(tidyverse)
+
 g_init <- expand.grid(
-  ER = c(0.5, 0.75, 0.999),
-  pNOB_target = c(0.5, 0.75, 0.99),
+  IRER = c(0.5, 0.75, 0.9999),
+  pNOB_target = c(0.5, 0.75, 0.9999),
   ocean_ER_scalar = 1,
-  surv = c("bootstrap", "high", "low"),
+  surv = c("low", "medium", "high"),
   fec = "constant"
 )
 
-g <- rbind(
-  g_init,
-  g_init %>% filter(surv == "bootstrap") %>% mutate(ocean_ER_scalar = 0.75),
-  g_init %>% filter(surv == "bootstrap") %>% mutate(ocean_ER_scalar = 1, fec = "decline")
+gr <- rbind(
+  g_init %>%
+    mutate(Scenario = ifelse(surv == "low", "A. 10% freshwater survival",
+                             ifelse(surv == "high", "C. 30% freshwater survival", "B. 20% freshwater survival"))),
+  g_init %>% filter(surv == "medium") %>% mutate(ocean_ER_scalar = 0.75) %>%
+    mutate(Scenario = "D. Same as B, lower ocean ER"),
+  g_init %>% filter(surv == "medium") %>% mutate(ocean_ER_scalar = 1, fec = "decline") %>%
+    mutate(Scenario = "E. Same as B, decline mat & fec")
 ) %>%
-  mutate(n = 1:n())
+  mutate(
+    Option = paste0("IRER = ", IRER, ", pNOB = ", pNOB_target),
+    n = 1:n()
+  )
 
-nOM <- nrow(g)
+nOM <- nrow(gr)
 
 
 # Define brood function
@@ -98,27 +106,25 @@ for (j in 1:5) {
   SMSE_list <- sfLapply(runs, function(i, g) {
     require(salmonMSE)
 
-    if (g$surv[i] == "bootstrap") {
-      SOM <- readRDS(file.path("SOM", "SOM_surv_bootstrap.rds"))
-    } else if (g$surv[i] == "high") {
-      SOM <- readRDS(file.path("SOM", "SOM_highsurv.rds"))
-    } else if (g$surv[i] == "low") {
-      SOM <- readRDS(file.path("SOM", "SOM_lowsurv.rds"))
-    }
-
     if (g$fec[i] == "decline") {
-      SOM_fecdecline <- readRDS(file.path("SOM", "SOM_declinematfec.rds"))
-      SOM@Bio@fec <- SOM@Hatchery@fec_brood <- SOM_fecdecline@Bio@fec
+      SOM <- readRDS(file.path("SOM", "SOM_declinematfec.rds"))
+    } else {
 
-      SOM@Bio@p_mature <- SOM_fecdecline@Bio@p_mature
-      SOM@Hatchery@p_mature_HOS <- SOM_fecdecline@Hatchery@p_mature_HOS
+      if (g$surv[i] == "low") {
+        SOM <- readRDS(file.path("SOM", "SOM_lowsurv.rds"))
+      } else if (g$surv[i] == "medium") {
+        SOM <- readRDS(file.path("SOM", "SOM_mediumsurv.rds"))
+      } else if (g$surv[i] == "high") {
+        SOM <- readRDS(file.path("SOM", "SOM_highsurv.rds"))
+      }
+
     }
 
     SOM@Hatchery@f_brood <- f_brood
     SOM@Hatchery@premove_HOS <- f_catch
 
     formals(SOM@Hatchery@f_brood)$ptarget_NOB <- g$pNOB_target[i]
-    formals(SOM@Hatchery@premove_HOS)$targetER <- g$ER[i]
+    formals(SOM@Hatchery@premove_HOS)$targetER <- g$IRER[i]
 
     SOM@Hatchery@stray_external[] <- 0
 
@@ -135,7 +141,7 @@ for (j in 1:5) {
 
     invisible()
 
-  }, g = g)
+  }, g = gr)
   tictoc::toc()
 }
 

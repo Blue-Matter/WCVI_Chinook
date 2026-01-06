@@ -8,24 +8,24 @@ source("99-Sarita-results-functions.R")
 
 # Identify scenarios and management options ----
 g_init <- expand.grid(
-  ER = c(0.5, 0.75, 1),
+  IRER = c(0.5, 0.75, 1),
   pNOB_target = c(0.5, 0.75, 1),
   ocean_ER_scalar = 1,
-  surv = c("bootstrap", "high", "low"),
+  surv = c("low", "medium", "high"),
   fec = "constant"
 )
 
 gr <- rbind(
   g_init %>%
-    mutate(Scenario = ifelse(surv == "bootstrap", "A. Recent ocean ER",
-                             ifelse(surv == "high", "B. High freshwater survival", "C. Low freshwater survival"))),
-  g_init %>% filter(surv == "bootstrap") %>% mutate(ocean_ER_scalar = 0.75) %>%
-    mutate(Scenario = "D. Lower ocean ER"),
-  g_init %>% filter(surv == "bootstrap") %>% mutate(ocean_ER_scalar = 0.75, fec = "decline") %>%
-    mutate(Scenario = "E. Decline mat & fec")
+    mutate(Scenario = ifelse(surv == "low", "A. 10% freshwater survival",
+                             ifelse(surv == "high", "C. 30% freshwater survival", "B. 20% freshwater survival"))),
+  g_init %>% filter(surv == "medium") %>% mutate(ocean_ER_scalar = 0.75) %>%
+    mutate(Scenario = "D. Same as B, lower ocean ER"),
+  g_init %>% filter(surv == "medium") %>% mutate(ocean_ER_scalar = 1, fec = "decline") %>%
+    mutate(Scenario = "E. Same as B, decline mat & fec")
 ) %>%
   mutate(
-    Option = paste0("ER = ", ER, ", pNOB = ", pNOB_target),
+    Option = paste0("IRER1300 = ", IRER, ", pNOB = ", pNOB_target),
     n = 1:n()
   )
 
@@ -170,31 +170,31 @@ val_prob <- data.frame(n = 1:nrow(gr)) %>%
 readr::write_csv(val_prob, file = "tables/Sarita_outcomes_prob.csv") # Save for Slick object
 
 # Big data frame of state variables for each simulation and year (for Slick)
-state_var <- c("PNI", "Total Spawners", "pNOB", "pHOS_effective", "p_wild", "Mean age", "Brood", "IR_Catch", "IR_Return", "Egg", "Smolt_Rel")
-state_names <- state_var
-state_names[2] <- "Natural Spawners"
-state_names[3] <- "pNOBeff"
-state_names[4] <- "pHOSeff"
+#state_var <- c("PNI", "Total Spawners", "pNOB", "pHOS_effective", "p_wild", "Mean age", "Brood", "IR_Catch", "IR_Return", "Egg", "Smolt_Rel")
+#state_names <- state_var
+#state_names[2] <- "Natural Spawners"
+#state_names[3] <- "pNOBeff"
+#state_names[4] <- "pHOSeff"
+#
+#df <- lapply(1:length(state_var), function(j) {
+#  lapply(1:length(SMSE_list), function(i) {
+#    .ts_fn(SMSE_list[[i]], var = state_var[j], all_sims = TRUE) %>%
+#      reshape2::melt() %>%
+#      rename(Simulation = Var1, Year = Var2) %>%
+#      mutate(variable = state_names[j], n = gr$n[i])
+#  }) %>%
+#    bind_rows()
+#}) %>%
+#  bind_rows() %>%
+#  left_join(select(gr, Scenario, Option, n), by = "n") %>%
+#  left_join(Option_name)
+#readr::write_csv(df, file = "tables/Sarita_outcomes_sim_year.csv") # Save for Slick object
+#rm(df)
 
-df <- lapply(1:length(state_var), function(j) {
-  lapply(1:length(SMSE_list), function(i) {
-    .ts_fn(SMSE_list[[i]], var = state_var[j], all_sims = TRUE) %>%
-      reshape2::melt() %>%
-      rename(Simulation = Var1, Year = Var2) %>%
-      mutate(variable = state_names[j], n = gr$n[i])
-  }) %>%
-    bind_rows()
-}) %>%
-  bind_rows() %>%
-  left_join(select(gr, Scenario, Option, n), by = "n") %>%
-  left_join(Option_name)
-readr::write_csv(df, file = "tables/Sarita_outcomes_sim_year.csv") # Save for Slick object
-rm(df)
-
-# Big data frame of state variables for each simulation and year (for salmonMSE app figure)
+# Big data frame of state variables for each simulation and year (for shinysalmon app)
 state_var2 <- c("Egg_NOS", "Egg_HOS", "Smolt_Rel", "Smolt_NOS", "Smolt_HOS", "KPT_NOS", "KPT_HOS", "Return_NOS", "Return_HOS",
                 "KT_NOS", "KT_HOS",
-                "Escapement_NOS", "Escapement_HOS", "NOB", "HOB", "IR_Catch", "NOS", "HOS")
+                "Escapement_NOS", "Escapement_HOS", "NOB", "HOB", "IR_Catch", "NOS", "HOS", "pNOB", "PNI", "pHOS_effective")
 
 df <- lapply(1:length(state_var2), function(j) {
   lapply(1:length(SMSE_list), function(i) {
@@ -208,52 +208,19 @@ df <- lapply(1:length(state_var2), function(j) {
   bind_rows() %>%
   left_join(select(gr, Scenario, Option, n), by = "n") %>%
   left_join(Option_name)
-readr::write_csv(df, file = "tables/Sarita_outcomes_sim_year2.csv") # Save for Slick object
+readr::write_csv(df, file = "tables/Sarita_outcomes_sim_year_app.csv") # Save for Slick object
 rm(df)
 
-#### Run loop over each of 4 scenarios for performance metric tables ----
+#### Run loop over each scenario to create performance metric tables ----
 pm_primary <- c("PNI", "Natural Spawners", "P_PNI50", "P_250_NOS", "P_476_NOS", "P_250_NS", "P_476_NS", "P_1300_NS")
 pm_ancillary <- c("IR_Return", "IR_Catch", "Brood", "Egg", "Releases",
                   "pNOBeff", "pHOSeff", "pWILD") #"Mean age")
 
-for (i in 1:length(scenario_unique)) {
+for (i in 2:length(scenario_unique)) {
 
   ind <- gr$Scenario == scenario_unique[i]
 
   dir <- file.path("figures", "SMSE", paste0("Set", i, "_"))
-
-  #### Time series ribbon plots (annual medians + 95% intervals)
-  #g1 <- ts_fn(SMSE_list[ind], Option_name$scenario, var = "PNI") +
-  #  coord_cartesian(ylim = c(0, 1))
-#
-  #g2 <- ts_fn(SMSE_list[ind], Option_name$scenario, var = "Total Spawners") +
-  #  coord_cartesian(ylim = c(0, 2500)) +
-  #  guides(colour = guide_legend(ncol = 2), fill = guide_legend(ncol = 2))
-#
-  #g3 <- ts_fn(SMSE_list[ind], Option_name$scenario, var = "pHOS_effective") +
-  #  coord_cartesian(ylim = c(0, 1)) +
-  #  labs(y = expression(pHOS[eff]))
-#
-  #g4 <- ts_fn(SMSE_list[ind], Option_name$scenario, var = "p_wild") +
-  #  coord_cartesian(ylim = c(0, 1)) +
-  #  labs(y = "pWILD")
-#
-  #g5 <- ts_fn(SMSE_list[ind], Option_name$scenario, var = "Brood") +
-  #  coord_cartesian(ylim = c(0, 700))
-#
-  #g6 <- ts_fn(SMSE_list[ind], Option_name$scenario, var = "pNOB") +
-  #  coord_cartesian(ylim = c(0, 1))
-#
-  #g7 <- ts_fn(SMSE_list[ind], Option_name$scenario, var = "Egg") +
-  #  coord_cartesian(ylim = c(0, 2e6)) +
-  #  labs(y = "Egg production (natural environment)")
-#
-  #g8 <- ts_fn(SMSE_list[ind], Option_name$scenario, var = "Smolt_Rel") +
-  #  coord_cartesian(ylim = c(0, 5e5)) +
-  #  labs(y = "Hatchery releases")
-#
-  #g <- ggpubr::ggarrange(g1, g2, g3, g4, g5, g6, ncol = 2, nrow = 3, common.legend = TRUE, legend = "bottom")
-  #ggsave(paste0(dir, "ts.png"), g, height = 7, width = 6)
 
   #### Time series barplots (annual medians for by scenario for each management option)
   ind2 <- which(ind)
@@ -401,7 +368,7 @@ for (i in 1:length(scenario_unique)) {
     #theme(strip.placement = "outside") +
     theme(legend.position = "bottom") +
     guides(colour = guide_legend(ncol = 1), shape = guide_legend(ncol = 1)) +
-    labs(x = NULL, y = NULL, shape = "ER", colour = "pNOB target") +
+    labs(x = NULL, y = NULL, shape = "IRER 1300", colour = "pNOB target") +
     ggtitle(scenario_unique[i]) +
     scale_x_discrete(labels = bold_scenario) +
     geom_vline(xintercept = c(3, 6) + 0.5)
@@ -432,7 +399,6 @@ d <- rbind(
   filter(variable %in% c(pm_primary, pm_ancillary)) %>%
   mutate(variable = factor(variable, c(pm_primary, pm_ancillary)))
 
-
 g <- plot_table(d) +
   geom_vline(xintercept = length(pm_primary) + 0.5, linewidth = 1, linetype = 2) +
   facet_wrap(vars(Scenario), ncol = 1) +
@@ -448,7 +414,7 @@ dir_dt <- file.path("figures", "SMSE")
 g <- val_sim %>%
   left_join(gr) %>%
   filter(variable == "PNI") %>%
-  select(Scenario, ER, pNOB_target, median) %>%
+  select(Scenario, IRER, pNOB_target, median) %>%
   rename(value = median) %>%
   decision_table_grid(
     ncol = 2,
@@ -466,7 +432,7 @@ cols <- ifelse(val >= 0.5, "lightgreen", "deeppink")
 g <- val_prob %>%
   left_join(gr) %>%
   filter(variable == "P_PNI50") %>%
-  select(Scenario, ER, pNOB_target, value) %>%
+  select(Scenario, IRER, pNOB_target, value) %>%
   decision_table_grid(
     ncol = 2,
     title = "Probability PNI > 0.5",
@@ -481,7 +447,7 @@ ggsave(file.path(dir_dt, "decisiontable_PNI50.png"), g, width = 4, height = 5)
 g <- val_sim %>%
   left_join(gr) %>%
   filter(variable == "Natural Spawners") %>%
-  select(Scenario, ER, pNOB_target, median) %>%
+  select(Scenario, IRER, pNOB_target, median) %>%
   mutate(value = round(median)) %>%
   decision_table_grid(ncol = 2, title = "Natural Spawners")
 ggsave(file.path(dir_dt, "decisiontable_sp.png"), g, width = 4, height = 5)
@@ -489,7 +455,7 @@ ggsave(file.path(dir_dt, "decisiontable_sp.png"), g, width = 4, height = 5)
 g <- val_sim %>%
   left_join(gr) %>%
   filter(variable == "Releases") %>%
-  select(Scenario, ER, pNOB_target, median) %>%
+  select(Scenario, IRER, pNOB_target, median) %>%
   rename(value = median) %>%
   decision_table_grid(ncol = 2, "Hatchery releases (100,000s)")
 ggsave(file.path(dir_dt, "decisiontable_rel.png"), g, width = 4, height = 5)
@@ -497,7 +463,7 @@ ggsave(file.path(dir_dt, "decisiontable_rel.png"), g, width = 4, height = 5)
 g <- val_prob %>%
   left_join(gr) %>%
   filter(variable == "P_1300_NS") %>%
-  select(Scenario, ER, pNOB_target, value) %>%
+  select(Scenario, IRER, pNOB_target, value) %>%
   decision_table_grid(
     ncol = 2,
     title = "Probabilty > 1300 natural spawners",
@@ -525,3 +491,38 @@ g <- val_sim %>%
   geom_hline(yintercept = 0.5, linetype = 3)
 ggsave(file.path(dir_dt, "tradeoff_PNI_rel.png"), g, width = 5, height = 5)
 
+
+#### Plot Simulated CYER
+CYER_PT <- calc_CYER(SMSE_list[[1]], PT = TRUE)
+CYER_T <- calc_CYER(SMSE_list[[1]], PT = FALSE)
+
+png("simulated_CYER.png", height = 6, width = 5, units = "in", res = 400)
+par(mfrow = c(2, 1), mar = c(5, 4, 1, 1))
+matplot(t(CYER_PT), type = "l", lty = 1, xlab = "Projection Year", ylab = "Preterminal CYER")
+matplot(t(CYER_T), type = "l", lty = 1, xlab = "Projection Year", ylab = "Terminal CYER")
+dev.off()
+
+
+#### Plot maturity and exploitation rate at age ----
+png("figures/SMSE/maturity_ER.png", height = 6, width = 3, units = "in", res = 400)
+par(mfrow = c(3, 1), mar = c(5, 4, 1, 1))
+
+SOM <- SMSE_list[[1]]@Misc$SOM
+
+salmonMSE:::plot_Mjuv_RS(SOM@Hatchery[[1]]@p_mature_HOS[, , 1, ],
+                         RS_names = c("Fed Fry", "Traditionals"), ylab = "Proportion mature")
+
+SOM@Harvest[[1]]@vulPT <- SMSE_list[[1]]@ExPT_NOS[, 1, , 30]
+
+salmonMSE:::plot_SOM(SOM@Harvest[[1]], "vulPT",
+                     type = "age", nsim = SOM@nsim, maxage = SOM@Bio[[1]]@maxage,
+                     nyears = SOM@nyears, proyears = SOM@proyears,
+                     ylab = "Preterminal exploitation rate")
+
+SOM@Harvest[[1]]@vulT <- SMSE_list[[1]]@ExT_NOS[, 1, , 30]
+salmonMSE:::plot_SOM(SOM@Harvest[[1]], "vulT",
+                     type = "age", nsim = SOM@nsim, maxage = SOM@Bio[[1]]@maxage,
+                     nyears = SOM@nyears, proyears = SOM@proyears,
+                     ylab = "Terminal exploitation rate")
+
+dev.off()

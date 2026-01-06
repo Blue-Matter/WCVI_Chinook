@@ -34,8 +34,8 @@ g2 <- CM_F(report, PT = FALSE, year1 = 1979)
 g <- ggpubr::ggarrange(g1, g2, ncol = 1)
 ggsave("figures/Sarita_F.png", g, height = 6, width = 4)
 
-g1$data %>% filter(Year %in% 2016:2020) %>% mutate(u = 1 - exp(-`50%`)) %>% pull(u) %>% mean() # Preterminal exploitation rate
-g2$data %>% filter(Year %in% 2016:2020) %>% mutate(u = 1 - exp(-`50%`)) %>% pull(u) %>% mean() # Terminal exploitation rate
+g1$data %>% filter(Year %in% 2013:2018) %>% mutate(u = 1 - exp(-`50%`)) %>% pull(u) %>% mean() # Preterminal exploitation rate
+g2$data %>% filter(Year %in% 2013:2018) %>% mutate(u = 1 - exp(-`50%`)) %>% pull(u) %>% mean() # Terminal exploitation rate
 
 
 # Exploitation rate
@@ -56,11 +56,18 @@ g <- ggpubr::ggarrange(g3, g5, g4, g6, g7, g8, ncol = 2, nrow = 3,
                        labels = paste0("(", LETTERS[1:6], ")"))
 ggsave("figures/Sarita_ex.png", g, height = 7, width = 6)
 
+g <- ggpubr::ggarrange(g3, g4, ncol = 1, nrow = 2)
+ggsave("figures/Sarita_CYER.png", g, height = 5, width = 4)
+
 # Preterminal CYER
 ER_summary <- full_join(
   g3$data %>% select(Year, `50%`) %>% rename(`Preterminal CYER` = `50%`),
   g4$data %>% select(Year, `50%`) %>% rename(`Terminal CYER` = `50%`)
-) %>% round(2)
+) %>%
+  round(2) %>%
+  filter(Year %in% c(2013:2018))
+mean(ER_summary$`Preterminal CYER`)
+mean(ER_summary$`Terminal CYER`)
 
 
 # Compare exploitation rates to CTC model

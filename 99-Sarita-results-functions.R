@@ -57,7 +57,7 @@ ts_fn <- function(SMSE_list, name, var) {
 
 plot_dotplot <- function(val_sim) {
   g <- val_sim %>%
-    ggplot(aes(scenario, median, ymin = lwr, ymax = upr, shape = factor(ER), colour = factor(pNOB_target))) +
+    ggplot(aes(scenario, median, ymin = lwr, ymax = upr, shape = factor(IRER), colour = factor(pNOB_target))) +
     facet_wrap(vars(variable), scales = "free_x", strip.position = "top") +
     geom_point() +
     geom_linerange() +
@@ -112,12 +112,12 @@ decision_table_grid <- function(x, title = "PNI", ncol = 2,
                                 fill_scheme = scale_fill_gradient2(low = "deeppink", high = "green4", mid = "white", midpoint = 0.5)) {
 
   g <- salmonMSE::plot_decision_table(
-    x = x$ER,
+    x = x$IRER,
     y = x$pNOB_target,
     z = x$value,
     scenario = x$Scenario,
     title = title,
-    xlab = "ER",
+    xlab = "IRER 1300",
     ylab = "pNOB target",
     ncol = ncol
   ) +
@@ -150,11 +150,11 @@ tradeoff_grid <- function(val_sim, xname = "Total Spawners", yname = "PNI", xlab
     val_sim %>% filter(variable == xname) %>% select(lwr, median, upr) %>% as.matrix(),
     val_sim %>% filter(variable == yname) %>% select(lwr, median, upr) %>% as.matrix(),
     val_sim %>% filter(variable == xname) %>% pull(pNOB_target) %>% factor(),
-    val_sim %>% filter(variable == xname) %>% pull(ER) %>% factor(),
+    val_sim %>% filter(variable == xname) %>% pull(IRER) %>% factor(),
     xlab = xlab,
     ylab = ylab,
     x1lab = "pNOB target",
-    x2lab = "ER",
+    x2lab = "IRER 1300",
     scenario = val_sim %>% filter(variable == xname) %>% pull(Scenario),
     ncol = ncol
   ) +
@@ -237,5 +237,43 @@ bold_scenario <- function(x) {
     }
   })
   parse(text = xout)
+}
+
+
+calc_CYER <- function(SMSE, PT = FALSE) {
+
+  maxage <- SMSE@Misc$SOM@Bio[[1]]@maxage
+  matt <- SMSE@Misc$SOM@Bio[[1]]@p_mature[, , SMSE@nyears + seq(1, SMSE@proyears)]
+  M <- SMSE@Misc$SOM@Bio[[1]]@Mjuv_NOS[, , SMSE@nyears + seq(1, SMSE@proyears), 1]
+  surv <- exp(-M)
+
+  # This is fine if M and maturity are constant, otherwise need to index by brood year
+  AEQ_PT <- array(NA_real_, c(SMSE@nsim, maxage, SMSE@proyears))
+  AEQ_PT[, maxage, ] <- 1
+  for (a in seq(maxage, 2) - 1) AEQ_PT[, a, ] <- matt[, a, ] + (1 - matt[, a, ]) * surv[, a, ] * AEQ_PT[, a+1, ]
+
+  AEQ_T <- 1
+
+  KPT_NOS <- SMSE@ExPT_NOS * SMSE@Njuv_NOS
+  KPT_HOS <- SMSE@ExPT_HOS * SMSE@Njuv_HOS
+
+  KT_NOS <- SMSE@ExT_NOS * SMSE@Return_NOS
+  KT_HOS <- SMSE@ExT_HOS * SMSE@Return_HOS
+
+  Esc <- SMSE@Escapement_HOS + SMSE@Escapement_NOS
+  num_PT <- (KPT_NOS + KPT_HOS)[, 1, , ] * AEQ_PT
+  num_T <- (KT_NOS + KT_HOS)[, 1, , ] * AEQ_T
+  denom <- num_PT + num_T + Esc[, 1, , ]
+
+  if (PT) {
+    CYER <- apply(num_PT, c(1, 3), sum)/apply(denom, c(1, 3), sum)
+  } else {
+    CYER <- apply(num_T, c(1, 3), sum)/apply(denom, c(1, 3), sum)
+  }
+
+  CYER[, SMSE@proyears] <- NA_real_
+  #matplot(CYER %>% t(), type = "l")
+
+  return(CYER)
 }
 
