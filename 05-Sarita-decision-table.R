@@ -8,7 +8,7 @@ source("99-Sarita-results-functions.R")
 
 # Identify scenarios and management options ----
 g_init <- expand.grid(
-  IRER = c(0.5, 0.75, 1),
+  IRER = c(0.25, 0.5, 0.75),
   pNOB_target = c(0.5, 0.75, 1),
   ocean_ER_scalar = 1,
   surv = c("low", "medium", "high"),
@@ -20,9 +20,9 @@ gr <- rbind(
     mutate(Scenario = ifelse(surv == "low", "A. 10% freshwater survival",
                              ifelse(surv == "high", "C. 30% freshwater survival", "B. 20% freshwater survival"))),
   g_init %>% filter(surv == "medium") %>% mutate(ocean_ER_scalar = 0.75) %>%
-    mutate(Scenario = "D. Same as B, lower ocean ER"),
+    mutate(Scenario = "D. B with lower ocean ER"),
   g_init %>% filter(surv == "medium") %>% mutate(ocean_ER_scalar = 1, fec = "decline") %>%
-    mutate(Scenario = "E. Same as B, decline mat & fec")
+    mutate(Scenario = "E. B with decline mat & fec")
 ) %>%
   mutate(
     Option = paste0("IRER1300 = ", IRER, ", pNOB = ", pNOB_target),
@@ -216,7 +216,7 @@ pm_primary <- c("PNI", "Natural Spawners", "P_PNI50", "P_250_NOS", "P_476_NOS", 
 pm_ancillary <- c("IR_Return", "IR_Catch", "Brood", "Egg", "Releases",
                   "pNOBeff", "pHOSeff", "pWILD") #"Mean age")
 
-for (i in 2:length(scenario_unique)) {
+for (i in 1:length(scenario_unique)) {
 
   ind <- gr$Scenario == scenario_unique[i]
 
@@ -231,7 +231,7 @@ for (i in 2:length(scenario_unique)) {
     jj <- ind2[j]
     plot_spawners(SMSE_list[[jj]])
     box()
-    title(Option_name$scenario[j])
+    title(Option_name$scenario[j], cex.main = 0.75)
   }
   dev.off()
 
@@ -241,7 +241,7 @@ for (i in 2:length(scenario_unique)) {
     jj <- ind2[j]
     plot_spawners(SMSE_list[[jj]], prop = FALSE, ylim = c(0, 4000))
     box()
-    title(Option_name$scenario[j])
+    title(Option_name$scenario[j], cex.main = 0.75)
   }
   dev.off()
 
@@ -251,7 +251,7 @@ for (i in 2:length(scenario_unique)) {
     jj <- ind2[j]
     plot_escapement(SMSE_list[[jj]], ylim = c(0, 1))
     box()
-    title(Option_name$scenario[j])
+    title(Option_name$scenario[j], cex.main = 0.75)
   }
   dev.off()
 
@@ -260,7 +260,7 @@ for (i in 2:length(scenario_unique)) {
   for (j in 1:nrow(Option_name)) {
     jj <- ind2[j]
     plot_fitness(SMSE_list[[jj]], ylim = c(0, 1))
-    title(Option_name$scenario[j])
+    title(Option_name$scenario[j], cex.main = 0.75)
   }
   dev.off()
 
@@ -270,7 +270,7 @@ for (i in 2:length(scenario_unique)) {
     jj <- ind2[j]
     plot_RS(SMSE_list[[jj]], var = "HOS", type = "abs",
             name = c("Fed Fry", "Traditionals"), ylim = c(0, 4000))
-    title(Option_name$scenario[j])
+    title(Option_name$scenario[j], cex.main = 0.75)
   }
   dev.off()
 
@@ -280,7 +280,7 @@ for (i in 2:length(scenario_unique)) {
     jj <- ind2[j]
     plot_RS(SMSE_list[[jj]], var = "Smolt", type = "abs", name = c("Fed Fry", "Traditionals"),
             ylab = "Hatchery releases")
-    title(Option_name$scenario[j])
+    title(Option_name$scenario[j], cex.main = 0.75)
   }
   dev.off()
 
@@ -291,7 +291,7 @@ for (i in 2:length(scenario_unique)) {
     plot_RS(SMSE_list[[jj]], var = "Esc", type = "abs", name = c("Fed Fry", "Traditionals"),
             ylab = "HO Escapement",
             ylim = c(0, 5000))
-    title(Option_name$scenario[j])
+    title(Option_name$scenario[j], cex.main = 0.75)
   }
   dev.off()
 
@@ -302,7 +302,7 @@ for (i in 2:length(scenario_unique)) {
     plot_LHG(SMSE_list[[jj]], var = "NOS", type = "abs", name = c("Early Smalls", "Late Larges"),
              ylab = "NOS",
              ylim = c(0, 700))
-    title(Option_name$scenario[j])
+    title(Option_name$scenario[j], cex.main = 0.75)
   }
   dev.off()
 
@@ -313,7 +313,7 @@ for (i in 2:length(scenario_unique)) {
     plot_LHG(SMSE_list[[jj]], var = "Esc", type = "abs", name = c("Early Smalls", "Late Larges"),
              ylab = "NO Escapement",
              ylim = c(0, 900))
-    title(Option_name$scenario[j])
+    title(Option_name$scenario[j], cex.main = 0.75)
   }
   dev.off()
 
@@ -324,7 +324,7 @@ for (i in 2:length(scenario_unique)) {
     plot_LHG(SMSE_list[[jj]], var = "Smolt", type = "abs", name = c("Early Smalls", "Late Larges"),
              ylab = "NO outmigrating juveniles",
              ylim = c(0, 4e5))
-    title(Option_name$scenario[j])
+    title(Option_name$scenario[j], cex.main = 0.75)
   }
   dev.off()
 

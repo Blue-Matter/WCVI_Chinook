@@ -5,7 +5,7 @@
 library(tidyverse)
 
 g_init <- expand.grid(
-  IRER = c(0.5, 0.75, 0.9999),
+  IRER = c(0.25, 0.5, 0.75),
   pNOB_target = c(0.5, 0.75, 0.9999),
   ocean_ER_scalar = 1,
   surv = c("low", "medium", "high"),
