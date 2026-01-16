@@ -7,32 +7,11 @@ library(reshape2)
 source("99-Sarita-results-functions.R")
 
 # Identify scenarios and management options ----
-g_init <- expand.grid(
-  IRER = c(0.25, 0.5, 0.75),
-  pNOB_target = c(0.5, 0.75, 1),
-  ocean_ER_scalar = 1,
-  surv = c("low", "medium", "high"),
-  fec = "constant"
-)
-
-gr <- rbind(
-  g_init %>%
-    mutate(Scenario = ifelse(surv == "low", "A. 10% freshwater survival",
-                             ifelse(surv == "high", "C. 30% freshwater survival", "B. 20% freshwater survival"))),
-  g_init %>% filter(surv == "medium") %>% mutate(ocean_ER_scalar = 0.75) %>%
-    mutate(Scenario = "D. B with lower ocean ER"),
-  g_init %>% filter(surv == "medium") %>% mutate(ocean_ER_scalar = 1, fec = "decline") %>%
-    mutate(Scenario = "E. B with decline mat & fec")
-) %>%
-  mutate(
-    Option = paste0("IRER1300 = ", IRER, ", pNOB = ", pNOB_target),
-    n = 1:n()
-  )
-
+gr <- readr::read_csv(file.path("tables", "Sarita_scenarios.csv"))
 nOM <- nrow(gr)
 
 # Grab all model output ----
-scenario_unique <- unique(gr$Scenario)
+scenario_unique <- unique(gr$Scenario) # Represented by individual table
 
 SMSE_list <- lapply(gr$n, function(i) {
   SMSE <- readRDS(file.path("SMSE", paste0("Sarita", i, ".rds")))
@@ -99,28 +78,29 @@ Rel <- sapply(SMSE_list, function(x) x@Smolt_Rel[, 1, y]) %>%
   rename(Simulation = Var1, Releases = value, n = Var2) %>%
   mutate(Releases = Releases/1e5)
 
-Option_name <- data.frame(
-  Option = gr$Option[1:9]
-) %>%
-  mutate(scenario = paste0("(", 1:9, ") ", Option))
+#Option_name <- data.frame(
+#  Option = gr$Option[1:9]
+#) %>%
+#  mutate(scenario = paste0("(", 1:9, ") ", Option))
 
-# All in one data frame
+# State variables for all simulations in year y in one data frame
 val_sim_all <- list(PNI, NS, pNOBeff, pHOSeff, p_wild, MA,
                     Brood, IRCatch, IRR, Egg, Rel) %>%
   Reduce(left_join, .) %>%
-  left_join(gr %>% select(Scenario, Option, n), by = "n") %>%
-  reshape2::melt(id.vars = c("Simulation", "Option", "Scenario", "n")) %>%
-  left_join(Option_name)
+  left_join(gr %>% select(Scenario_name, Option_name, n), by = "n") %>%
+  rename(Option = Option_name, Scenario = Scenario_name) %>%
+  reshape2::melt(id.vars = c("Simulation", "Option", "Scenario", "n"))
 readr::write_csv(val_sim_all, file = "tables/Sarita_outcomes_sim.csv") # Save for Slick object
 
+# Median and range for state variables across simulations
 val_sim <- val_sim_all %>%
   summarise(m = mean(value),
             median = median(value, na.rm = TRUE),
             lwr = quantile(value, 0.25, na.rm = TRUE),
             upr = quantile(value, 0.75, na.rm = TRUE),
-            .by = c("Option", "Scenario", "n", "variable")) %>%
-  left_join(Option_name, by = "Option") %>%
-  mutate(scenario = factor(scenario, rev(Option_name$scenario)))
+            .by = c("Option", "Scenario", "n", "variable")) #%>%
+  #left_join(Option_name, by = "Option") %>%
+  #mutate(scenario = factor(scenario, rev(Option_name$scenario)))
 
 # Probability (end of projection) ----
 P_Sgen_NOS <- sapply(SMSE_list, function(x, Sgen = 250) {
@@ -165,33 +145,12 @@ val_prob <- data.frame(n = 1:nrow(gr)) %>%
     P_1300_NS = P_1300
   ) %>%
   reshape2::melt(id.vars = "n") %>%
-  left_join(gr) %>%
-  left_join(Option_name)
+  left_join(select(gr, Option_name, Scenario_name, n)) %>%
+  rename(Option = Option_name, Scenario = Scenario_name)
 readr::write_csv(val_prob, file = "tables/Sarita_outcomes_prob.csv") # Save for Slick object
 
-# Big data frame of state variables for each simulation and year (for Slick)
-#state_var <- c("PNI", "Total Spawners", "pNOB", "pHOS_effective", "p_wild", "Mean age", "Brood", "IR_Catch", "IR_Return", "Egg", "Smolt_Rel")
-#state_names <- state_var
-#state_names[2] <- "Natural Spawners"
-#state_names[3] <- "pNOBeff"
-#state_names[4] <- "pHOSeff"
-#
-#df <- lapply(1:length(state_var), function(j) {
-#  lapply(1:length(SMSE_list), function(i) {
-#    .ts_fn(SMSE_list[[i]], var = state_var[j], all_sims = TRUE) %>%
-#      reshape2::melt() %>%
-#      rename(Simulation = Var1, Year = Var2) %>%
-#      mutate(variable = state_names[j], n = gr$n[i])
-#  }) %>%
-#    bind_rows()
-#}) %>%
-#  bind_rows() %>%
-#  left_join(select(gr, Scenario, Option, n), by = "n") %>%
-#  left_join(Option_name)
-#readr::write_csv(df, file = "tables/Sarita_outcomes_sim_year.csv") # Save for Slick object
-#rm(df)
-
 # Big data frame of state variables for each simulation and year (for shinysalmon app)
+# CSV file is 200 MB, but we'll have to convert the data frame to arrays and save as an R object (.rds) later to reduce disk space
 state_var2 <- c("Egg_NOS", "Egg_HOS", "Smolt_Rel", "Smolt_NOS", "Smolt_HOS", "KPT_NOS", "KPT_HOS", "Return_NOS", "Return_HOS",
                 "KT_NOS", "KT_HOS",
                 "Escapement_NOS", "Escapement_HOS", "NOB", "HOB", "IR_Catch", "NOS", "HOS", "pNOB", "PNI", "pHOS_effective")
@@ -206,8 +165,8 @@ df <- lapply(1:length(state_var2), function(j) {
     bind_rows()
 }) %>%
   bind_rows() %>%
-  left_join(select(gr, Scenario, Option, n), by = "n") %>%
-  left_join(Option_name)
+  left_join(select(gr, Scenario_name, Option_name, n), by = "n") %>%
+  rename(Option = Option_name, Scenario = Scenario_name)
 readr::write_csv(df, file = "tables/Sarita_outcomes_sim_year_app.csv") # Save for Slick object
 rm(df)
 
@@ -216,6 +175,7 @@ pm_primary <- c("PNI", "Natural Spawners", "P_PNI50", "P_250_NOS", "P_476_NOS", 
 pm_ancillary <- c("IR_Return", "IR_Catch", "Brood", "Egg", "Releases",
                   "pNOBeff", "pHOSeff", "pWILD") #"Mean age")
 
+# Time series medians
 for (i in 1:length(scenario_unique)) {
 
   ind <- gr$Scenario == scenario_unique[i]
@@ -328,95 +288,110 @@ for (i in 1:length(scenario_unique)) {
   }
   dev.off()
 
-  # Histograms across simulations of performance metrics at end of projection
-  #PNI_hist <- val_sim_all %>%
-  #  filter(Scenario == scenario_unique[i]) %>%
-  #  left_join(Option_name) %>%
-  #  filter(variable == "PNI")
-  #g <- PNI_hist %>%
-  #  plot_histogram() +
-  #  ggtitle(scenario_unique[i]) +
-  #  coord_cartesian(xlim = c(0, 1))
-  #ggsave(paste0(dir, "histogram_PNI.png"), g, width = 6, height = 4)
+}
 
-  #ref <- data.frame(
-  #  Lower = 250,
-  #  Upper = 476,
-  #  Srep = 1300
-  #) %>%
-  #  reshape2::melt()
-  #g <- val_sim_all %>%
-  #  filter(Scenario == scenario_unique[i]) %>%
-  #  left_join(Option_name) %>%
-  #  filter(variable == "Natural Spawners") %>%
-  #  plot_histogram("Natural Spawners", binwidth = 100) +
-  #  ggtitle(scenario_unique[i]) +
-  #  geom_vline(data = ref, aes(xintercept = value, linetype = variable)) +
-  #  theme(legend.position = "bottom") +
-  #  labs(linetype = "Benchmark") +
-  #  scale_linetype_manual(values = c(2, 3, 4))
-  #ggsave(paste0(dir, "histogram_NS.png"), g, width = 6, height = 4.5)
 
-  # Make figure of performance metrics (all simulations at end of projection) ----
-  g <- val_sim %>%
-    filter(Scenario == scenario_unique[i]) %>%
-    left_join(gr) %>%
-    #filter(variable %in% pm_primary) %>%
-    plot_dotplot() +
-    scale_shape_manual(values = c(1, 4, 16)) +
-    #theme(strip.placement = "outside") +
-    theme(legend.position = "bottom") +
-    guides(colour = guide_legend(ncol = 1), shape = guide_legend(ncol = 1)) +
-    labs(x = NULL, y = NULL, shape = "IRER 1300", colour = "pNOB target") +
-    ggtitle(scenario_unique[i]) +
-    scale_x_discrete(labels = bold_scenario) +
-    geom_vline(xintercept = c(3, 6) + 0.5)
-  ggsave(paste0(dir, "performance_metrics.png"), g, width = 6, height = 7)
+# Tables of performance metrics by freshwater survival
+for (i in LETTERS[1:3]) {
 
-  # Performance metrics (medians at end of the projection) ----
+  # Full performance metrics (medians at end of the projection) ----
   d <- rbind(
-    val_sim %>% select(Scenario, variable, median, scenario),
-    val_prob %>% select(Scenario, variable, value, scenario) %>% rename(median = value)
+    val_sim %>% select(Option, Scenario, variable, median),
+    val_prob %>% select(Option, Scenario, variable, value) %>% rename(median = value)
   ) %>%
-    filter(Scenario == scenario_unique[i],
-           variable %in% c(pm_primary, pm_ancillary)) %>%
+    filter(grepl(i, Scenario)) %>%
+    filter(variable %in% c(pm_primary, pm_ancillary)) %>%
     mutate(variable = factor(variable, c(pm_primary, pm_ancillary)))
 
-  g <- plot_table(d) +
+  g <- plot_table(d, ncol = 1) +
     geom_vline(xintercept = length(pm_primary) + 0.5, linewidth = 1, linetype = 2) +
-    ggtitle(scenario_unique[i]) +
-    scale_y_discrete(labels = bold_scenario) +
-    geom_hline(yintercept = c(3, 6) + 0.5, linewidth = 1)
-  ggsave(paste0(dir, "performance_table_full.png"), g, width = 7.5, height = 3)
+    scale_y_discrete(labels = font_fn, limits = rev) +
+    geom_hline(yintercept = 3.5, linewidth = 1)
+  ggsave(file.path("figures", "SMSE", paste0("performance_table_", i, ".png")), g, width = 7.5, height = 7)
+
+  # Short performance metrics
+  pm_short <- c("PNI", "Natural Spawners", "P_PNI50", "P_1300_NS")
+
+  d <- rbind(
+    val_sim %>% select(Option, Scenario, variable, median),
+    val_prob %>% select(Option, Scenario, variable, value) %>% rename(median = value)
+  ) %>%
+    filter(grepl(i, Scenario)) %>%
+    filter(variable %in% pm_short) %>%
+    mutate(variable = factor(variable, pm_short))
+
+  g <- plot_table(d, ncol = 1) +
+    #geom_vline(xintercept = length(pm_primary) + 0.5, linewidth = 1, linetype = 2) +
+    scale_y_discrete(labels = font_fn, limits = rev) +
+    geom_hline(yintercept = 3.5, linewidth = 1)
+  ggsave(file.path("figures", "SMSE", paste0("performance_table_", i, ".png")), g, width = 7.5, height = 7)
+
 }
 
 # Full performance table all scenarios
-d <- rbind(
-  val_sim %>% select(Scenario, variable, median, scenario),
-  val_prob %>% select(Scenario, variable, value, scenario) %>% rename(median = value)
-) %>%
-  filter(variable %in% c(pm_primary, pm_ancillary)) %>%
-  mutate(variable = factor(variable, c(pm_primary, pm_ancillary)))
+glist <- lapply(LETTERS[1:3], function(i) {
+  d <- rbind(
+    val_sim %>% select(Option, Scenario, variable, median),
+    val_prob %>% select(Option, Scenario, variable, value) %>% rename(median = value)
+  ) %>%
+    filter(grepl(i, Scenario)) %>%
+    filter(variable %in% c(pm_primary, pm_ancillary)) %>%
+    mutate(variable = factor(variable, c(pm_primary, pm_ancillary)))
 
-g <- plot_table(d) +
-  geom_vline(xintercept = length(pm_primary) + 0.5, linewidth = 1, linetype = 2) +
-  facet_wrap(vars(Scenario), ncol = 1) +
-  scale_y_discrete(labels = bold_scenario) +
-  geom_hline(yintercept = c(3, 6) + 0.5, linewidth = 1)
-ggsave("figures/SMSE/performance_table_full.png", g, width = 7.5, height = 9)
+  g <- plot_table(d, ncol = 1) +
+    geom_vline(xintercept = length(pm_primary) + 0.5, linewidth = 1, linetype = 2) +
+    geom_hline(yintercept = 3.5, linewidth = 1)
+
+  if (i == "A") {
+    g <- g + scale_y_discrete(labels = font_fn, limits = rev)
+  } else {
+    g <- g + scale_y_discrete(labels = NULL, limits = rev)
+  }
+
+  g
+})
+
+g <- ggpubr::ggarrange(plotlist = glist, ncol = 3, widths = c(3, 2, 2))
+ggsave("figures/SMSE/performance_table_full.png", g, width = 17, height = 8)
+
+# Short performance metrics
+pm_short <- c("PNI", "Natural Spawners", "P_PNI50", "P_1300_NS")
+
+glist <- lapply(LETTERS[1:3], function(i) {
+  d <- rbind(
+    val_sim %>% select(Option, Scenario, variable, median),
+    val_prob %>% select(Option, Scenario, variable, value) %>% rename(median = value)
+  ) %>%
+    filter(grepl(i, Scenario)) %>%
+    filter(variable %in% pm_short) %>%
+    mutate(variable = factor(variable, pm_short))
+
+  g <- plot_table(d, ncol = 1) +
+    geom_vline(xintercept = 2.5, linewidth = 1, linetype = 2) +
+    geom_hline(yintercept = 3.5, linewidth = 1)
+
+  if (i == "A") {
+    g <- g + scale_y_discrete(labels = font_fn, limits = rev)
+  } else {
+    g <- g + scale_y_discrete(labels = NULL, limits = rev)
+  }
+
+  g
+})
+
+g <- ggpubr::ggarrange(plotlist = glist, ncol = 3, widths = c(3, 2, 2))
+ggsave("figures/SMSE/performance_table_short.png", g, width = 8, height = 7)
 
 #### Decision table for all scenarios ----
 y <- 29
 
-dir_dt <- file.path("figures", "SMSE")
-
 g <- val_sim %>%
-  left_join(gr) %>%
+  left_join(select(gr, IRER, pNOB_target, n)) %>%
   filter(variable == "PNI") %>%
   select(Scenario, IRER, pNOB_target, median) %>%
   rename(value = median) %>%
   decision_table_grid(
-    ncol = 2,
+    ncol = 3,
     title = "Median PNI",
     fill_scheme =
       scale_fill_gradientn(
@@ -424,16 +399,18 @@ g <- val_sim %>%
         colours = c("deeppink", "lightgreen", "green4")
       )
   )
-ggsave(file.path(dir_dt, "decisiontable_PNI.png"), g, width = 4, height = 5)
+g$facet$params$free$y <- TRUE
+g$facet$params$free$x <- TRUE
+ggsave(file.path("figures", "SMSE", "decisiontable_PNI.png"), g, width = 7, height = 5)
 
 val <- seq(0, 1, 0.01)
 cols <- ifelse(val >= 0.5, "lightgreen", "deeppink")
 g <- val_prob %>%
-  left_join(gr) %>%
+  left_join(select(gr, IRER, pNOB_target, n)) %>%
   filter(variable == "P_PNI50") %>%
   select(Scenario, IRER, pNOB_target, value) %>%
   decision_table_grid(
-    ncol = 2,
+    ncol = 3,
     title = "Probability PNI > 0.5",
     fill_scheme =
       scale_fill_gradientn(
@@ -441,30 +418,26 @@ g <- val_prob %>%
         colours = cols
       )
   )
-ggsave(file.path(dir_dt, "decisiontable_PNI50.png"), g, width = 4, height = 5)
+g$facet$params$free$y <- TRUE
+g$facet$params$free$x <- TRUE
+ggsave(file.path("figures", "SMSE", "decisiontable_PNI50.png"), g, width = 7, height = 5)
 
 g <- val_sim %>%
-  left_join(gr) %>%
+  left_join(select(gr, IRER, pNOB_target, n)) %>%
   filter(variable == "Natural Spawners") %>%
   select(Scenario, IRER, pNOB_target, median) %>%
   mutate(value = round(median)) %>%
-  decision_table_grid(ncol = 2, title = "Natural Spawners")
-ggsave(file.path(dir_dt, "decisiontable_sp.png"), g, width = 4, height = 5)
-
-g <- val_sim %>%
-  left_join(gr) %>%
-  filter(variable == "Releases") %>%
-  select(Scenario, IRER, pNOB_target, median) %>%
-  rename(value = median) %>%
-  decision_table_grid(ncol = 2, "Hatchery releases (100,000s)")
-ggsave(file.path(dir_dt, "decisiontable_rel.png"), g, width = 4, height = 5)
+  decision_table_grid(ncol = 3, title = "Natural Spawners")
+g$facet$params$free$y <- TRUE
+g$facet$params$free$x <- TRUE
+ggsave(file.path("figures", "SMSE", "decisiontable_sp.png"), g, width = 7, height = 5)
 
 g <- val_prob %>%
-  left_join(gr) %>%
+  left_join(select(gr, IRER, pNOB_target, n)) %>%
   filter(variable == "P_1300_NS") %>%
   select(Scenario, IRER, pNOB_target, value) %>%
   decision_table_grid(
-    ncol = 2,
+    ncol = 3,
     title = "Probabilty > 1300 natural spawners",
     fill_scheme =
       scale_fill_gradientn(
@@ -472,23 +445,35 @@ g <- val_prob %>%
         colours = c("deeppink", "lightgreen", "green4")
       )
   )
-ggsave(file.path(dir_dt, "decisiontable_P_1300.png"), g, width = 4, height = 5)
+g$facet$params$free$y <- TRUE
+g$facet$params$free$x <- TRUE
+ggsave(file.path("figures", "SMSE", "decisiontable_P_1300.png"), g, width = 7, height = 5)
+
+g <- val_sim %>%
+  left_join(select(gr, IRER, pNOB_target, n)) %>%
+  filter(variable == "Releases") %>%
+  select(Scenario, IRER, pNOB_target, median) %>%
+  rename(value = median) %>%
+  decision_table_grid(ncol = 3, "Hatchery releases (100,000s)")
+g$facet$params$free$y <- TRUE
+g$facet$params$free$x <- TRUE
+ggsave(file.path("figures", "SMSE", "decisiontable_rel.png"), g, width = 7, height = 5)
 
 # Tradeoff figure
 g <- val_sim %>%
-  left_join(gr) %>%
-  tradeoff_grid(xname = "Natural Spawners", yname = "PNI", xlim = c(0, 10000), ylim = c(0, 1), ncol = 2) +
+  left_join(select(gr, IRER, pNOB_target, n)) %>%
+  tradeoff_grid(xname = "Natural Spawners", yname = "PNI", xlim = c(0, 10000), ylim = c(0, 1), ncol = 3) +
   geom_vline(xintercept = 1300, linetype = 3) +
   geom_hline(yintercept = 0.5, linetype = 3)
-ggsave(file.path(dir_dt, "tradeoff_PNI_sp.png"), g, width = 5, height = 5)
+ggsave(file.path("figures", "SMSE", "tradeoff_PNI_sp.png"), g, width = 7, height = 5)
 
 
 g <- val_sim %>%
-  left_join(gr) %>%
+  left_join(select(gr, IRER, pNOB_target, n)) %>%
   tradeoff_grid(xname = "Releases", yname = "PNI", xlim = c(0, 5), ylim = c(0, 1),
-                ncol = 2, xlab = "Hatchery releases (100,000s)") +
+                ncol = 3, xlab = "Hatchery releases (100,000s)") +
   geom_hline(yintercept = 0.5, linetype = 3)
-ggsave(file.path(dir_dt, "tradeoff_PNI_rel.png"), g, width = 5, height = 5)
+ggsave(file.path(dir_dt, "tradeoff_PNI_rel.png"), g, width = 7, height = 5)
 
 
 #### Plot Simulated CYER
@@ -515,13 +500,13 @@ SOM@Harvest[[1]]@vulPT <- SMSE_list[[1]]@ExPT_NOS[, 1, , 30]
 
 salmonMSE:::plot_SOM(SOM@Harvest[[1]], "vulPT",
                      type = "age", nsim = SOM@nsim, maxage = SOM@Bio[[1]]@maxage,
-                     nyears = SOM@nyears, proyears = SOM@proyears,
+                     proyears = SOM@proyears,
                      ylab = "Preterminal exploitation rate")
 
 SOM@Harvest[[1]]@vulT <- SMSE_list[[1]]@ExT_NOS[, 1, , 30]
 salmonMSE:::plot_SOM(SOM@Harvest[[1]], "vulT",
                      type = "age", nsim = SOM@nsim, maxage = SOM@Bio[[1]]@maxage,
-                     nyears = SOM@nyears, proyears = SOM@proyears,
+                     proyears = SOM@proyears,
                      ylab = "Terminal exploitation rate")
 
 dev.off()

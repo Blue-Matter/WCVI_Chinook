@@ -5,7 +5,7 @@ library(salmonMSE)
 
 maxage <- 5
 nsim <- 100
-nyears <- 2
+#nyears <- 2
 proyears <- 30
 n_g <- 2
 
@@ -25,10 +25,11 @@ set.seed(24)
 sim_samp <- sample(seq(1, length(report_RBT)), nsim)
 
 ### Natural mortality - NOS ----
-Mjuv_NOS <- array(0, c(nsim, maxage, nyears + proyears, n_g))
+#Mjuv_NOS <- array(0, c(nsim, maxage, nyears + proyears, n_g))
+Mjuv_NOS <- array(0, c(nsim, maxage-1, proyears, n_g))
 
 # Survival from CTC 23-06 p. 9 for ages 2+
-M_CTC <- -log(1 - c(0.9, 0.3, 0.2, 0.1, 0.1))
+M_CTC <- -log(1 - c(0.9, 0.3, 0.2, 0.1))
 
 # Age 1 value by life cycle group
 # Life cycle groups only differ in age 1 survival (first year of life in marine environment) from life cycle spreadsheet
@@ -36,17 +37,19 @@ surv1 <- 1 - c(0.996, 0.95)
 Mjuv_NOS[, 1, , 1] <- -log(surv1[1])
 Mjuv_NOS[, 1, , 2] <- -log(surv1[2])
 
-# Age 2-5
+# Age 2-4, all age 5 will mature before juvenile maturity
 Mjuv_NOS[, 2, , ] <- M_CTC[2]
 Mjuv_NOS[, 3, , ] <- M_CTC[3]
 Mjuv_NOS[, 4, , ] <- M_CTC[4]
-Mjuv_NOS[, 5, , ] <- M_CTC[5]
 
 ### Maturity ----
 # Assume identical maturity from hypothesized fed fry maturity
-p_mature <- array(0, c(nsim, maxage, nyears + proyears))
+#p_mature <- array(0, c(nsim, maxage, nyears + proyears))
+#p_mature[] <- matt_avg[, 1, sim_samp] %>% t() %>%
+#  array(c(nsim, maxage, nyears + proyears))
+p_mature <- array(0, c(nsim, maxage, proyears))
 p_mature[] <- matt_avg[, 1, sim_samp] %>% t() %>%
-  array(c(nsim, maxage, nyears + proyears))
+  array(c(nsim, maxage, proyears))
 
 fec_Sarita <- c(0, 1500, 3000, 3600, 4600) # See Res Doc, but set age 2 fecundity arbitrarily equal to half of age 3
 p_female <- c(0, 0.01, 0.1, 0.55, 0.8)
@@ -95,7 +98,8 @@ Harvest <- new(
 n_r <- 2
 
 # Natural mortality HOS
-Mjuv_HOS <- array(0, c(nsim, maxage, nyears + proyears, n_r))
+#Mjuv_HOS <- array(0, c(nsim, maxage, nyears + proyears, n_r))
+Mjuv_HOS <- array(0, c(nsim, maxage-1, proyears, n_r))
 
 # Age 1 survival
 #g <- salmonMSE:::CM_M(report_RBT)
@@ -109,10 +113,12 @@ Mjuv_HOS[, 1, , 2] <- -log(surv1_HOS[2])
 Mjuv_HOS[, 2, , ] <- M_CTC[2]
 Mjuv_HOS[, 3, , ] <- M_CTC[3]
 Mjuv_HOS[, 4, , ] <- M_CTC[4]
-Mjuv_HOS[, 5, , ] <- M_CTC[5]
 
-p_mature_RS <- array(0, c(nsim, maxage, nyears + proyears, n_r)) # Traditionals mature earlier
-p_mature_RS[] <- array(matt_avg[, , sim_samp], c(maxage, n_r, nsim, nyears + proyears)) %>%
+#p_mature_RS <- array(0, c(nsim, maxage, nyears + proyears, n_r)) # Traditionals mature earlier
+#p_mature_RS[] <- array(matt_avg[, , sim_samp], c(maxage, n_r, nsim, nyears + proyears)) %>%
+#  aperm(c(3, 1, 4, 2))
+p_mature_RS <- array(0, c(nsim, maxage, proyears, n_r)) # Traditionals mature earlier
+p_mature_RS[] <- array(matt_avg[, , sim_samp], c(maxage, n_r, nsim, proyears)) %>%
   aperm(c(3, 1, 4, 2))
 
 # Sarita releases
@@ -171,71 +177,39 @@ Hatchery <- new(
 
 # Calculate HistNjuv_NOS (which return year?)
 nyears_cm <- 45 - 5 # Sample abundance from final year with complete brood life cycle
-#Njuv_CM <- sapply(report_RBT[sim_samp], function(x) x$N[nyears_cm + 1, , ],
-#                  simplify = "array")
-
-# Assume 50-50 ratio of spawners by life history group and release strategy
-NOS <- sapply(report_RBT[sim_samp], function(x) x$syear[seq(nyears_cm - nyears + 1, nyears_cm), , 1],
-              simplify = "array") %>%
-  aperm(c(3, 2, 1))
-HOS <- sapply(report_RBT[sim_samp], function(x) x$syear[seq(nyears_cm - nyears + 1, nyears_cm), , 2],
-              simplify = "array") %>%
-  aperm(c(3, 2, 1))
-#colSums(NOS)
-#colSums(HOS)
-#colSums(HOS)/(colSums(NOS) + colSums(HOS))
-#colSums(NOS) + colSums(HOS)
+# Assume 50-50 ratio of spawners by life history group and release strategy - age x simulation
+NOS <- sapply(report_RBT[sim_samp], function(x) x$syear[nyears_cm, , 1])
+HOS <- sapply(report_RBT[sim_samp], function(x) x$syear[nyears_cm, , 2])
 
 NOS_g <- sapply(1:Bio@n_g, function(g) {
   0.5 * NOS
-}, simplify = "array")
+}, simplify = "array") %>%
+  aperm(c(2, 1, 3))
 
 HOS_r <- sapply(1:Hatchery@n_r, function(r) {
   0.5 * HOS
-}, simplify = "array")
+}, simplify = "array") %>%
+  aperm(c(2, 1, 3))
 
-# Get F
-FPT <- sapply(report_RBT[sim_samp], function(x) x$FPT[seq(nyears_cm - nyears + 1, nyears_cm)])
-FT <- sapply(report_RBT[sim_samp], function(x) x$FT[seq(nyears_cm - nyears + 1, nyears_cm)])
-
+Njuv <- sapply(report_RBT[sim_samp], getElement, "N", simplify = "array") # year x age x origin x sim
 Njuv_NOS <- sapply(1:Bio@n_g, function(g) {
-  N <- sapply(report_RBT[sim_samp], getElement, "N", simplify = "array")
-
-  Njuv <- array(0, c(nsim, maxage, nyears + 1))
-  Njuv[, 1, ] <- Bio@p_LHG[g] * t(N[seq(nyears_cm - nyears + 1, nyears_cm + 1), 1, 1, ]) # Age - 1
-  Njuv[, -1, 1] <- 0.5 * t(N[nyears_cm - nyears + 1, -1, 1, ]) # Year 1
-
-  for (y in seq(2, nyears + 1)) {
-    surv <- exp(-t(vulPT) * FPT[y-1, ] - Bio@Mjuv_NOS[, , y-1, g])
-    Njuv[, seq(2, maxage), y] <- Njuv[, seq(1, maxage - 1), y-1] * surv[, seq(1, maxage - 1)] *
-      (1 - Bio@p_mature[, seq(1, maxage - 1), y-1])
-  }
-  return(Njuv)
-}, simplify = 'array')
+  N <- 0.5 * array(Njuv[nyears_cm, -1, 1, ], c(maxage-1, nsim))
+  return(N)
+}, simplify = 'array') %>%
+  aperm(c(2, 1, 3))
 
 Njuv_HOS <- sapply(1:Hatchery@n_r, function(r) {
-  N <- sapply(report_RBT[sim_samp], getElement, "N", simplify = "array")
-
-  Njuv <- array(0, c(nsim, maxage, nyears + 1))
-  Njuv[, 1, ] <- 0.5 * t(N[seq(nyears_cm - nyears + 1, nyears_cm + 1), 1, 2, ]) # Age - 1
-  Njuv[, -1, 1] <- 0.5 * t(N[nyears_cm - nyears + 1, -1, 2, ]) # Year 1
-
-  for (y in seq(2, nyears + 1)) {
-    surv <- exp(-t(vulPT) * FPT[y-1, ] - Hatchery@Mjuv_HOS[, , y-1, r])
-    Njuv[, seq(2, maxage), y] <- Njuv[, seq(1, maxage - 1), y-1] * surv[, seq(1, maxage - 1)] *
-      (1 - Hatchery@p_mature_HOS[, seq(1, maxage - 1), y-1, r])
-  }
-  return(Njuv)
-}, simplify = 'array')
+  N <- 0.5 * array(Njuv[nyears_cm, -1, 2, ], c(maxage-1, nsim))
+  return(N)
+}, simplify = 'array') %>%
+  aperm(c(2, 1, 3))
 
 Historical <- new(
   "Historical",
-  HistSpawner_NOS = NOS_g,
-  HistSpawner_HOS = HOS_r,
-  HistNjuv_NOS = Njuv_NOS,
-  HistNjuv_HOS = Njuv_HOS,
-  HistFPT = array(t(FPT), c(nsim, nyears, 2)),
-  HistFT = array(t(FT), c(nsim, nyears, 2))
+  InitNOS = NOS_g,
+  InitHOS = HOS_r,
+  InitNjuv_NOS = Njuv_NOS,
+  InitNjuv_HOS = Njuv_HOS
 )
 
 
@@ -335,7 +309,7 @@ fry_surv_sd <- fry_surv_year %>%
   round(2)
 
 set.seed(234)
-fry_surv_sim <- lapply(c(0.1, 0.2, 0.3), function(m) {
+fry_surv_sim <- lapply(c(0.1, 0.15, 0.2), function(m) {
   samp <- rnorm(nsim * proyears, qlogis(m), fry_surv_sd) %>% matrix(nsim, proyears)
   samp_trans <- plogis(samp)
   samp_trans/mean(samp_trans) * m
@@ -346,19 +320,39 @@ if (FALSE) {
   fry_surv_sim %>% lapply(mean)
   fry_surv_sim %>% lapply(sd)
 
-  png("figures/Sarita-fry-survival-sim.png", height = 6, width = 5, units = "in", res = 400)
-  par(mfrow = c(3, 1), mar = c(2, 3, 3, 1), oma = c(3, 1.5, 0, 0))
+  png("figures/Sarita-fry-survival-sim.png", height = 6.5, width = 6, units = "in", res = 400)
+  par(mfrow = c(3, 2), mar = c(4, 4, 3, 1), oma = c(0, 0, 0, 0))
+
   matplot(fry_surv_sim[[1]][1:3, ] %>% t(),
           main = "10% mean survival",
-          type = "l", lty = 1, panel.first = grid(), ylim = c(0, 1), ylab = "")
+          xlab = "Projection Year", ylab = "Egg-fry survival",
+          type = "l", lty = 1, panel.first = grid(), ylim = c(0, 1))
+  hist(fry_surv_sim[[1]], breaks = seq(0, 1, 0.025),
+       main = "10% mean survival",
+       xlim = c(0, 0.8),
+       xlab = "Egg-fry survival")
+  box()
+
   matplot(fry_surv_sim[[2]][1:3, ] %>% t(),
-          main = "20% mean survival",
-          type = "l", lty = 1, panel.first = grid(), ylim = c(0, 1), ylab = "")
+          main = "15% mean survival",
+          xlab = "Projection Year", ylab = "Egg-fry survival",
+          type = "l", lty = 1, panel.first = grid(), ylim = c(0, 1))
+  hist(fry_surv_sim[[2]], breaks = seq(0, 1, 0.025),
+       main = "15% mean survival",
+       xlim = c(0, 0.8),
+       xlab = "Egg-fry survival")
+  box()
+
   matplot(fry_surv_sim[[3]][1:3, ] %>% t(),
-          main = "30% mean survival",
-          type = "l", lty = 1, panel.first = grid(), ylim = c(0, 1), ylab = "")
-  mtext("Projection year", side = 1, outer = TRUE, line = 1)
-  mtext("Freshwater survival", side = 2, outer = TRUE, line = 0)
+          main = "20% mean survival",
+          xlab = "Projection Year", ylab = "Egg-fry survival",
+          type = "l", lty = 1, panel.first = grid(), ylim = c(0, 1))
+  hist(fry_surv_sim[[3]], breaks = seq(0, 1, 0.025),
+       main = "20% mean survival",
+       xlim = c(0, 0.8),
+       xlab = "Egg-fry survival")
+  box()
+
   dev.off()
 
 }
@@ -378,7 +372,6 @@ Habitat <- new(
 SOM_low <- new("SOM",
                Name = "Sarita base, 2 LHG, 2 RS",
                nsim = nsim,
-               nyears = nyears,
                proyears = proyears,
                seed = 1,
                Bio = Bio,
@@ -420,26 +413,26 @@ matt_slope <- matt_med[seq(12, 40), ] %>%
 
 SOM_decfec <- SOM_medium
 for (i in matt_slope$Age) {
-  matt_i <- matrix(qlogis(SOM_decfec@Bio@p_mature[, i, SOM_decfec@nyears]), SOM_decfec@nsim, SOM_decfec@proyears)
+  matt_i <- matrix(qlogis(SOM_decfec@Bio@p_mature[, i, 1]), SOM_decfec@nsim, SOM_decfec@proyears)
   for (y in 2:SOM_decfec@proyears) {
     matt_i[, y] <- matt_i[, 1] + matt_slope$slope[matt_slope$Age == i] * y
   }
-  SOM_decfec@Bio@p_mature[, i, SOM_decfec@nyears + seq(1, SOM_decfec@proyears)] <- plogis(matt_i)
+  SOM_decfec@Bio@p_mature[, i, ] <- plogis(matt_i)
 
   for (r in SOM_decfec@Hatchery@n_r) {
-    matt_i <- matrix(qlogis(SOM_decfec@Hatchery@p_mature_HOS[, i, SOM_decfec@nyears, r]), SOM_decfec@nsim, SOM_decfec@proyears)
+    matt_i <- matrix(qlogis(SOM_decfec@Hatchery@p_mature_HOS[, i, , r]), SOM_decfec@nsim, SOM_decfec@proyears)
     for (y in 2:SOM_decfec@proyears) {
       matt_i[, y] <- matt_i[, 1] + matt_slope$slope[matt_slope$Age == i] * y
     }
-    SOM_decfec@Hatchery@p_mature_HOS[, i, SOM_decfec@nyears + seq(1, SOM_decfec@proyears), r] <- plogis(matt_i)
+    SOM_decfec@Hatchery@p_mature_HOS[, i, , r] <- plogis(matt_i)
   }
 
 }
 
 fec_val <- read.csv("tables/fec_decline.csv")
-fec_decline <- array(fec_Sarita * p_female, c(maxage, nsim, nyears + proyears)) %>% aperm(c(2, 1, 3))
+fec_decline <- array(fec_Sarita * p_female, c(maxage, nsim, proyears)) %>% aperm(c(2, 1, 3))
 for (a in 3:5) {
-  fec_decline[, a, nyears + seq(1, proyears)] <- matrix(
+  fec_decline[, a, seq(1, proyears)] <- matrix(
     as.numeric(fec_val[a-2, -1]) * fec_Sarita[a]/fec_val[a-2, 2] * p_female[a],
     nsim,
     proyears,
@@ -462,12 +455,12 @@ if (FALSE) {
 
   salmonMSE:::plot_SOM(SOM_low@Harvest, "vulPT",
                        type = "age", nsim = SOM_low@nsim, maxage = SOM_low@Bio@maxage,
-                       nyears = SOM_low@nyears, proyears = SOM_low@proyears,
+                       proyears = SOM_low@proyears,
                        ylab = "Juvenile fishery vulnerability")
 
-  salmonMSE:::plot_SOM(SOM@Harvest, "vulT",
+  salmonMSE:::plot_SOM(SOM_low@Harvest, "vulT",
                        type = "age", nsim = SOM_low@nsim, maxage = SOM_low@Bio@maxage,
-                       nyears = SOM_low@nyears, proyears = SOM_low@proyears,
+                       proyears = SOM_low@proyears,
                        ylab = "Terminal fishery vulnerability")
 
   dev.off()
@@ -475,7 +468,7 @@ if (FALSE) {
   #### Time-varying maturity and fecundity ----
   matt_new <- lapply(1:length(sim_samp), function(x) {
     out <- report_RBT[[sim_samp[x]]]["matt"]
-    matt_proj <- SOM_low@Hatchery@p_mature_HOS[x, , SOM_low@nyears + seq(1, SOM_low@proyears), 2] %>%
+    matt_proj <- SOM_low@Hatchery@p_mature_HOS[x, , , 2] %>%
       t() %>%
       array(c(SOM_low@proyears, maxage, 1))
     out$matt <- abind::abind(out$matt, matt_proj, along = 1)
@@ -488,7 +481,7 @@ if (FALSE) {
 
   matt_new <- lapply(1:length(sim_samp), function(x) {
     out <- report_RBT[[sim_samp[x]]]["matt"]
-    matt_proj <- SOM_decfec@Hatchery@p_mature_HOS[x, , SOM_decfec@nyears + seq(1, SOM_decfec@proyears), 2] %>%
+    matt_proj <- SOM_decfec@Hatchery@p_mature_HOS[x, , , 2] %>%
       t() %>%
       array(c(SOM_decfec@proyears, maxage, 1))
     out$matt <- abind::abind(out$matt, matt_proj, along = 1)

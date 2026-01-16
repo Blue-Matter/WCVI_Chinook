@@ -67,7 +67,7 @@ plot_dotplot <- function(val_sim) {
 }
 
 
-plot_table <- function(df, padding = 0.52) {
+plot_table <- function(df, padding = 0.52, ncol = 1) {
 
   lev <- levels(df$variable)
 
@@ -82,15 +82,16 @@ plot_table <- function(df, padding = 0.52) {
            val_0_1 = (median - min(median, na.rm = TRUE)) / diff(range(median, na.rm = TRUE)),
            .by = variable)
 
-  g <- ggplot(d, aes(variable, scenario)) +
+  g <- ggplot(d, aes(variable, Option)) +
     geom_tile(aes(fill = val_rel), alpha = 0.6, color = "white") +
     geom_text(aes(label = txt), size = ggplot2::rel(3)) +
     guides(fill = "none") +
     labs(x = NULL, y = NULL) +
+    facet_wrap(vars(Scenario), ncol = ncol, scales = "free_y", dir = "v") +
     coord_cartesian(
       expand = FALSE,
       xlim = range(as.numeric(d$variable)) + c(-padding, padding),
-      ylim = range(as.numeric(d$scenario)) + c(-padding - 0.01, padding + 0.01)
+      ylim = range(as.numeric(d$Option)) + c(-padding - 0.01, padding + 0.01)
     ) +
     theme(
       panel.grid.major = element_blank(),
@@ -100,10 +101,10 @@ plot_table <- function(df, padding = 0.52) {
       axis.ticks.y = element_blank(),
       axis.text.x = element_text(color = "grey10", angle = 90),
       strip.placement = "outside",
+      strip.text = element_text(face = "bold"),
       strip.background = element_blank()
     ) +
     scale_x_discrete(position = "top") +
-    scale_y_discrete(labels = levels(d$scenario)) +
     scale_fill_gradient2(low = "deeppink", high = "green4", mid = "white", limits = c(0, 1), midpoint = 0.5)
   g
 }
@@ -123,23 +124,6 @@ decision_table_grid <- function(x, title = "PNI", ncol = 2,
   ) +
     fill_scheme
 
-  #vars <- unique(x$Scenario)
-#
-  #dt <- data.frame(x = x$ER, y = x$pNOB_target, z = x$value, Scenario = x$Scenario)
-  #dt$txt <- format(round(dt$z, 2))
-#
-  #g <- ggplot(dt, aes(factor(.data$x), factor(.data$y), fill = .data$z)) +
-  #  geom_tile(colour = "grey20", alpha = 0.6) +
-  #  geom_text(aes(label = .data$txt)) +
-  #  coord_cartesian(expand = FALSE) +
-  #  guides(fill = "none") +
-  #  facet_wrap(vars(.data$Scenario), ncol = 2) +
-  #  theme_bw() +
-  #  theme(panel.grid.major = element_blank(),
-  #        strip.background = element_blank(),
-  #        panel.grid.minor = element_blank()) +
-  #  fill_scheme +
-  #  labs(x = "ER", y = "pNOB target", title = title)
   g
 }
 
@@ -225,15 +209,18 @@ plot_spaghetti <- function(x, sims, OM_name = NULL, MP_name = NULL, alpha = 0.4,
 }
 
 # Function that parses text for management options and typesets the ER (pass along to ggplot)
-bold_scenario <- function(x) {
+font_fn <- function(x) {
   xx <- strsplit(x, ",")
   xout <- sapply(xx, function(i) {
+
+    if (length(i) < 2) i[2] <- ""
+
     if (grepl("= 0.75", i[1])) {
       paste0("italic(underline(\"", i[1], "\"))~\"", i[2], "\"")
-    } else if (grepl("= 0.5", i[1])) {
-      paste0("plain(\"", i[1], "\")~\"", i[2], "\"")
     } else if (grepl("= 0.25", i[1])) {
       paste0("bold(\"", i[1], "\")~\"", i[2], "\"")
+    } else if (grepl("= 0", i[1])) {
+      paste0("plain(\"", i[1], "\")~\"", i[2], "\"")
     }
   })
   parse(text = xout)
@@ -243,8 +230,8 @@ bold_scenario <- function(x) {
 calc_CYER <- function(SMSE, PT = FALSE) {
 
   maxage <- SMSE@Misc$SOM@Bio[[1]]@maxage
-  matt <- SMSE@Misc$SOM@Bio[[1]]@p_mature[, , SMSE@nyears + seq(1, SMSE@proyears)]
-  M <- SMSE@Misc$SOM@Bio[[1]]@Mjuv_NOS[, , SMSE@nyears + seq(1, SMSE@proyears), 1]
+  matt <- SMSE@Misc$SOM@Bio[[1]]@p_mature[, , seq(1, SMSE@proyears)]
+  M <- SMSE@Misc$SOM@Bio[[1]]@Mjuv_NOS[, , seq(1, SMSE@proyears), 1]
   surv <- exp(-M)
 
   # This is fine if M and maturity are constant, otherwise need to index by brood year
