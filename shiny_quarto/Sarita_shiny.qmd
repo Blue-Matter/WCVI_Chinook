@@ -1,7 +1,7 @@
 ---
 title: "Sarita visualization app"
 author: "Q. Huynh, Blue Matter"
-date: "2025-11-27"
+date: "2026-01-07"
 format: html
 server: shiny
 ---
@@ -46,26 +46,32 @@ figure_height <- 600
 #| include: false
 
 ### Grab array and convert to data frame, download if necessary ----
+if (dir.exists(here::here("tables")) && file.exists(here::here("tables/Sarita_app_results.rds"))) {
+  output <- readRDS(here::here("tables/Sarita_app_results.rds")) 
+} else {
+  file_name <- file.path(tempdir(), "Sarita_app_results.rds")
+  download.file(
+    "https://github.com/Blue-Matter/WCVI_Chinook/raw/refs/heads/main/tables/Sarita_app_results.rds",
+    file_name
+  )
+  output <- readRDS(file_name)
+}
+
 var_plot <- c("Egg (10^6)", "Outmigrating juvenile (10^5)", #"Hatchery Release (10^5)",
               "Preterminal catch", "Mature Return", "Terminal catch", "In-river Return",
               "Brood", "In-river Catch", "Natural Spawners")
-val <- local({
-  
-  
-  if (dir.exists(here::here("tables")) && file.exists(here::here("tables/Sarita_app_results.rds"))) {
-    val_array <- readRDS(here::here("tables/Sarita_app_results.rds")) 
-  } else {
-    file_name <- file.path(tempdir(), "Sarita_app_results.rds")
-    download.file(
-      "https://github.com/Blue-Matter/WCVI_Chinook/raw/refs/heads/main/tables/Sarita_app_results.rds",
-      file_name
-    )
-    val_array <- readRDS(file_name)
-  }
-  
-  reshape2::melt(val_array) %>%
-    mutate(var_name = factor(var_name, var_plot))
-})
+val <- reshape2::melt(output$State) %>%
+  mutate(var_name = factor(var_name, var_plot))
+
+
+var_plot_hatchery <- c("Releases", "pHOSeff", "PNI")
+if (!is.null(output$Hatchery)) {
+  val_hatchery <- reshape2::melt(output$Hatchery) %>%
+    mutate(var_name = factor(var_name, var_plot_hatchery))
+} else {
+  val_hatchery <- NULL
+}
+
 ```
 
 This webpage presents simulation results from the application of candidate management strategies for Sarita Chinook across alternative plausible scenarios. 
@@ -100,6 +106,12 @@ inputPanel(
 #| label: fig-spaghetti
 #| fig-cap: "Time series lineplots of state variables for all simulations (grey lines) with annual median in blue."
 plotOutput("spaghetti", height = figure_height)
+```
+
+```{r}
+#| label: fig-spaghetti-hatchery
+#| fig-cap: "Time series lineplots of hatchery-specific state variables for all simulations (grey lines) with annual median in blue."
+plotOutput("spaghetti_hatchery", height = 0.5 * figure_height)
 ```
 
 #### All simulations, by origin
@@ -172,6 +184,15 @@ val_plot_origin <- reactive({
   )
 })
 
+val_plot_hatchery <- reactive({
+  dplyr::filter(
+    val_hatchery,
+    Scenario == input$OM,
+    scenario == input$MP,
+    ifelse(var_name == "Releases", Year > 1, Year < max(.data$Year))
+  )
+})
+
 val_plot <- reactive({
   val_plot_origin() %>%
     summarise(value = sum(value, na.rm = TRUE), .by = c(Year, var_name, Scenario, scenario, Simulation))
@@ -180,6 +201,10 @@ val_plot <- reactive({
 output$spaghetti <- renderPlot({
   plot_spaghetti(val_plot(), OM_name = input$OM, MP_name = input$MP)
 }, res = 100, height = figure_height)
+
+output$spaghetti_hatchery <- renderPlot({
+  plot_spaghetti(val_plot_hatchery(), OM_name = input$OM, MP_name = input$MP)
+}, res = 100, height = 0.5 * figure_height)
 
 output$spaghetti_origin <- renderPlot({
   plot_spaghetti(val_plot_origin(), OM_name = input$OM, MP_name = input$MP, by_origin = TRUE, alpha = 0.1)

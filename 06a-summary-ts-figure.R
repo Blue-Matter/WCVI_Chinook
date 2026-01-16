@@ -2,7 +2,7 @@
 
 if (FALSE) { # Run once, clean up spreadsheet
 
-  val <- readr::read_csv("tables/Sarita_outcomes_sim_year2.csv") %>%
+  val <- readr::read_csv("tables/Sarita_outcomes_sim_year_app.csv") %>%
     mutate(var_name = variable)
   table(val$var_name)
 
@@ -33,6 +33,7 @@ if (FALSE) { # Run once, clean up spreadsheet
   val$value[grepl("10\\^5", val$var_name)] <- val$value[grepl("10\\^5", val$var_name)]/1e5
   val$value[grepl("10\\^6", val$var_name)] <- val$value[grepl("10\\^6", val$var_name)]/1e6
 
+  # State variables with NO and HO
   var_plot <- c("Egg (10^6)", "Outmigrating juvenile (10^5)", #"Hatchery Release (10^5)",
                 "Preterminal catch", "Mature Return", "Terminal catch", "In-river Return",
                 "Brood", "In-river Catch", "Natural Spawners")
@@ -46,20 +47,44 @@ if (FALSE) { # Run once, clean up spreadsheet
     value.var = "value"
   )
   names(dimnames(val_array)) <- c("Simulation", "Year", "Scenario", "scenario", "var_name", "Origin")
-  saveRDS(val_array, "tables/Sarita_app_results.rds")
+
+  # Hatchery-specific state variables with total only
+  var_plot_hatchery <- c("PNI", "pHOS_effective", "Outmigrating juvenile (10^5)")
+
+  val_plot_hatchery <- filter(val, var_name %in% var_plot_hatchery, Origin == "Hatchery origin") %>%
+    summarise(value = sum(value), .by = c(Simulation, Year, Scenario, scenario, var_name))
+
+  val_plot_hatchery$var_name[val_plot_hatchery$var_name == "Outmigrating juvenile (10^5)"] <- "Releases"
+  val_plot_hatchery$var_name[val_plot_hatchery$var_name == "pHOS_effective"] <- "pHOSeff"
+
+  val_array_hatchery <- reshape2::acast(
+    val_plot_hatchery,
+    list("Simulation", "Year", "Scenario", "scenario", "var_name"),
+    fill = NA_real_,
+    value.var = "value"
+  )
+  names(dimnames(val_array_hatchery)) <- c("Simulation", "Year", "Scenario", "scenario", "var_name")
+
+  output <- list(
+    State = val_array,
+    Hatchery = val_array_hatchery
+  )
+  saveRDS(output, "tables/Sarita_app_results.rds")
 
 }
+
+
 
 var_plot <- c("Egg (10^6)", "Outmigrating juvenile (10^5)", #"Hatchery Release (10^5)",
               "Preterminal catch", "Mature Return", "Terminal catch", "In-river Return",
               "Brood", "In-river Catch", "Natural Spawners")
 
-val_array <- readRDS("tables/Sarita_app_results.rds")
-val <- reshape2::melt(val_array) %>%
+output <- readRDS("tables/Sarita_app_results.rds")
+val <- reshape2::melt(output$State) %>%
   mutate(var_name = factor(var_name, var_plot))
 
-OM_plot <- "A. Recent ocean ER"
-MP_plot <- c("(1) ER = 0.5, pNOB = 0.5", "(9) ER = 1, pNOB = 1")
+OM_plot <- "A. 10% freshwater survival"
+MP_plot <- c("(1) IRER1300 = 0.25, pNOB = 0.5", "(9) IRER1300 = 0.75, pNOB = 1")
 sim <- 1:3
 
 # Line figure

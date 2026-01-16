@@ -329,34 +329,33 @@ for (i in 1:length(scenario_unique)) {
   dev.off()
 
   # Histograms across simulations of performance metrics at end of projection
-  PNI_hist <- val_sim_all %>%
-    filter(Scenario == scenario_unique[i]) %>%
-    left_join(Option_name) %>%
-    filter(variable == "PNI")
-  g <- PNI_hist %>%
-    plot_histogram() +
-    ggtitle(scenario_unique[i]) +
-    coord_cartesian(xlim = c(0, 1))
-  ggsave(paste0(dir, "histogram_PNI.png"), g, width = 6, height = 4)
+  #PNI_hist <- val_sim_all %>%
+  #  filter(Scenario == scenario_unique[i]) %>%
+  #  left_join(Option_name) %>%
+  #  filter(variable == "PNI")
+  #g <- PNI_hist %>%
+  #  plot_histogram() +
+  #  ggtitle(scenario_unique[i]) +
+  #  coord_cartesian(xlim = c(0, 1))
+  #ggsave(paste0(dir, "histogram_PNI.png"), g, width = 6, height = 4)
 
-  ref <- data.frame(
-    Lower = 250,
-    Upper = 476,
-    Srep = 1300
-  ) %>%
-    reshape2::melt()
-
-  g <- val_sim_all %>%
-    filter(Scenario == scenario_unique[i]) %>%
-    left_join(Option_name) %>%
-    filter(variable == "Natural Spawners") %>%
-    plot_histogram("Natural Spawners", binwidth = 100) +
-    ggtitle(scenario_unique[i]) +
-    geom_vline(data = ref, aes(xintercept = value, linetype = variable)) +
-    theme(legend.position = "bottom") +
-    labs(linetype = "Benchmark") +
-    scale_linetype_manual(values = c(2, 3, 4))
-  ggsave(paste0(dir, "histogram_NS.png"), g, width = 6, height = 4.5)
+  #ref <- data.frame(
+  #  Lower = 250,
+  #  Upper = 476,
+  #  Srep = 1300
+  #) %>%
+  #  reshape2::melt()
+  #g <- val_sim_all %>%
+  #  filter(Scenario == scenario_unique[i]) %>%
+  #  left_join(Option_name) %>%
+  #  filter(variable == "Natural Spawners") %>%
+  #  plot_histogram("Natural Spawners", binwidth = 100) +
+  #  ggtitle(scenario_unique[i]) +
+  #  geom_vline(data = ref, aes(xintercept = value, linetype = variable)) +
+  #  theme(legend.position = "bottom") +
+  #  labs(linetype = "Benchmark") +
+  #  scale_linetype_manual(values = c(2, 3, 4))
+  #ggsave(paste0(dir, "histogram_NS.png"), g, width = 6, height = 4.5)
 
   # Make figure of performance metrics (all simulations at end of projection) ----
   g <- val_sim %>%
@@ -478,7 +477,7 @@ ggsave(file.path(dir_dt, "decisiontable_P_1300.png"), g, width = 4, height = 5)
 # Tradeoff figure
 g <- val_sim %>%
   left_join(gr) %>%
-  tradeoff_grid(xname = "Natural Spawners", yname = "PNI", xlim = c(0, 4000), ylim = c(0, 1), ncol = 2) +
+  tradeoff_grid(xname = "Natural Spawners", yname = "PNI", xlim = c(0, 10000), ylim = c(0, 1), ncol = 2) +
   geom_vline(xintercept = 1300, linetype = 3) +
   geom_hline(yintercept = 0.5, linetype = 3)
 ggsave(file.path(dir_dt, "tradeoff_PNI_sp.png"), g, width = 5, height = 5)

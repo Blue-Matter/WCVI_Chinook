@@ -228,11 +228,11 @@ plot_spaghetti <- function(x, sims, OM_name = NULL, MP_name = NULL, alpha = 0.4,
 bold_scenario <- function(x) {
   xx <- strsplit(x, ",")
   xout <- sapply(xx, function(i) {
-    if (grepl("= 1", i[1])) {
+    if (grepl("= 0.75", i[1])) {
       paste0("italic(underline(\"", i[1], "\"))~\"", i[2], "\"")
-    } else if (grepl("= 0.75", i[1])) {
-      paste0("plain(\"", i[1], "\")~\"", i[2], "\"")
     } else if (grepl("= 0.5", i[1])) {
+      paste0("plain(\"", i[1], "\")~\"", i[2], "\"")
+    } else if (grepl("= 0.25", i[1])) {
       paste0("bold(\"", i[1], "\")~\"", i[2], "\"")
     }
   })
