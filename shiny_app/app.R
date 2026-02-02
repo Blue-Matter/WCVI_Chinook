@@ -19,7 +19,7 @@ plot_spaghetti <- function(x, sims, OM_name = NULL, MP_name = NULL, alpha = 0.4,
   if (by_origin) {
     require(ggborderline)
 
-    meds <- summarise(x, value = median(value), .by = c(Year, var_name, Scenario, scenario, Origin))
+    meds <- summarise(x, value = median(value), .by = c(Year, var_name, Scenario, Option, Origin))
 
     g <- x %>%
       mutate(gr = paste(Simulation, Origin)) %>%
@@ -35,7 +35,7 @@ plot_spaghetti <- function(x, sims, OM_name = NULL, MP_name = NULL, alpha = 0.4,
 
   } else if (missing(sims)) { # All simulations
 
-    meds <- summarise(x, value = median(value), .by = c(Year, var_name, Scenario, scenario))
+    meds <- summarise(x, value = median(value), .by = c(Year, var_name, Scenario, Option))
 
     g <- ggplot(x, aes(Year, value)) +
       facet_wrap(vars(var_name), scales = "free_y") +
@@ -131,7 +131,7 @@ server <- function(input, output, session) {
     mutate(var_name = factor(var_name, var_plot))
 
   updateSelectInput(session, "OM", choices = unique(val$Scenario))
-  updateSelectInput(session, "MP", choices = unique(val$scenario))
+  updateSelectInput(session, "MP", choices = unique(val$Option))
 
   updatePickerInput(session, "Sim_spaghetti", choices = unique(val$Simulation), selected = seq(1, min(val$Simulation, 3)))
 
@@ -143,14 +143,14 @@ server <- function(input, output, session) {
     dplyr::filter(
       val,
       Scenario == input$OM,
-      scenario == input$MP,
+      Option == input$MP,
       ifelse(var_name == "Outmigrating juvenile (10^5)", Year > 1, Year < max(.data$Year))
     )
   })
 
   val_plot <- reactive({
     val_plot_origin() %>%
-      summarise(value = sum(value, na.rm = TRUE), .by = c(Year, var_name, Scenario, scenario, Simulation))
+      summarise(value = sum(value, na.rm = TRUE), .by = c(Year, var_name, Scenario, Option, Simulation))
   })
 
   output$spaghetti <- renderPlot({

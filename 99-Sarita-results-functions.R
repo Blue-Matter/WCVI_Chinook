@@ -57,7 +57,7 @@ ts_fn <- function(SMSE_list, name, var) {
 
 plot_dotplot <- function(val_sim) {
   g <- val_sim %>%
-    ggplot(aes(scenario, median, ymin = lwr, ymax = upr, shape = factor(IRER), colour = factor(pNOB_target))) +
+    ggplot(aes(Option, median, ymin = lwr, ymax = upr, shape = factor(IRER), colour = factor(pNOB_target))) +
     facet_wrap(vars(variable), scales = "free_x", strip.position = "top") +
     geom_point() +
     geom_linerange() +
@@ -166,7 +166,7 @@ plot_spaghetti <- function(x, sims, OM_name = NULL, MP_name = NULL, alpha = 0.4,
   if (by_origin) {
     require(ggborderline)
 
-    meds <- summarise(x, value = median(value), .by = c(Year, var_name, Scenario, scenario, Origin))
+    meds <- summarise(x, value = median(value), .by = c(Year, var_name, Scenario, Option, Origin))
 
     g <- x %>%
       mutate(gr = paste(Simulation, Origin)) %>%
@@ -182,7 +182,7 @@ plot_spaghetti <- function(x, sims, OM_name = NULL, MP_name = NULL, alpha = 0.4,
 
   } else if (missing(sims)) { # All simulations
 
-    meds <- summarise(x, value = median(value), .by = c(Year, var_name, Scenario, scenario))
+    meds <- summarise(x, value = median(value), .by = c(Year, var_name, Scenario, Option))
 
     g <- ggplot(x, aes(Year, value)) +
       facet_wrap(vars(var_name), scales = "free_y") +

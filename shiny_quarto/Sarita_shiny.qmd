@@ -1,7 +1,7 @@
 ---
 title: "Sarita visualization app"
 author: "Q. Huynh, Blue Matter"
-date: "2026-01-07"
+date: "2026-02-02"
 format: html
 server: shiny
 ---
@@ -92,7 +92,7 @@ inputPanel(
               choices = unique(val$Scenario), width = "200%"),
   
   selectInput("MP", label = "Management option",
-              choices = unique(val$scenario), width = "200%")
+              choices = unique(val$Option), width = "200%")
 )
 ```
 
@@ -179,7 +179,7 @@ val_plot_origin <- reactive({
   dplyr::filter(
     val,
     Scenario == input$OM,
-    scenario == input$MP,
+    Option == input$MP,
     ifelse(var_name == "Outmigrating juvenile (10^5)", Year > 1, Year < max(.data$Year))
   )
 })
@@ -188,14 +188,14 @@ val_plot_hatchery <- reactive({
   dplyr::filter(
     val_hatchery,
     Scenario == input$OM,
-    scenario == input$MP,
+    Option == input$MP,
     ifelse(var_name == "Releases", Year > 1, Year < max(.data$Year))
   )
 })
 
 val_plot <- reactive({
   val_plot_origin() %>%
-    summarise(value = sum(value, na.rm = TRUE), .by = c(Year, var_name, Scenario, scenario, Simulation))
+    summarise(value = sum(value, na.rm = TRUE), .by = c(Year, var_name, Scenario, Option, Simulation))
 })
 
 output$spaghetti <- renderPlot({

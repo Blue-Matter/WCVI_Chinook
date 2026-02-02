@@ -294,6 +294,23 @@ for (i in 1:length(scenario_unique)) {
 # Tables of performance metrics by freshwater survival
 for (i in LETTERS[1:3]) {
 
+  # Make figure of performance metrics (all simulations at end of projection) ----
+  #g <- val_sim %>%
+  #  filter(Scenario == scenario_unique[i]) %>%
+  #  left_join(gr) %>%
+  #  #filter(variable %in% pm_primary) %>%
+  #  plot_dotplot() +
+  #  scale_shape_manual(values = c(1, 4, 16)) +
+  #  #theme(strip.placement = "outside") +
+  #  theme(legend.position = "bottom") +
+  #  guides(colour = guide_legend(ncol = 1), shape = guide_legend(ncol = 1)) +
+  #  labs(x = NULL, y = NULL, shape = "IRER 1300", colour = "pNOB target") +
+  #  ggtitle(scenario_unique[i]) +
+  #  scale_x_discrete(labels = bold_scenario) +
+  #  geom_vline(xintercept = c(3, 6) + 0.5)
+  #ggsave(paste0(dir, "performance_metrics.png"), g, width = 6, height = 7)
+
+
   # Full performance metrics (medians at end of the projection) ----
   d <- rbind(
     val_sim %>% select(Option, Scenario, variable, median),
@@ -466,6 +483,14 @@ g <- val_sim %>%
   geom_vline(xintercept = 1300, linetype = 3) +
   geom_hline(yintercept = 0.5, linetype = 3)
 ggsave(file.path("figures", "SMSE", "tradeoff_PNI_sp.png"), g, width = 7, height = 5)
+
+g <- val_prob %>%
+  left_join(select(gr, IRER, pNOB_target, n)) %>%
+  mutate(lwr = value, median = value, upr = value) %>%
+  tradeoff_grid(xname = "P_1300_NS", yname = "P_PNI50", xlim = c(0, 1), ylim = c(0, 1), ncol = 3) +
+  geom_vline(xintercept = 0.5, linetype = 3) +
+  geom_hline(yintercept = 0.5, linetype = 3)
+ggsave(file.path("figures", "SMSE", "tradeoff_prob.png"), g, width = 7, height = 5)
 
 
 g <- val_sim %>%

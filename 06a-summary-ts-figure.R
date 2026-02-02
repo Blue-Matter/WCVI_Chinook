@@ -39,31 +39,31 @@ if (FALSE) { # Run once, clean up spreadsheet
                 "Brood", "In-river Catch", "Natural Spawners")
 
   val_plot <- filter(val, var_name %in% var_plot) %>%
-    summarise(value = sum(value), .by = c(Simulation, Year, Scenario, scenario, var_name, Origin))
+    summarise(value = sum(value), .by = c(Simulation, Year, Scenario, Option, var_name, Origin))
   val_array <- reshape2::acast(
     val_plot,
-    list("Simulation", "Year", "Scenario", "scenario", "var_name", "Origin"),
+    list("Simulation", "Year", "Scenario", "Option", "var_name", "Origin"),
     fill = NA_real_,
     value.var = "value"
   )
-  names(dimnames(val_array)) <- c("Simulation", "Year", "Scenario", "scenario", "var_name", "Origin")
+  names(dimnames(val_array)) <- c("Simulation", "Year", "Scenario", "Option", "var_name", "Origin")
 
   # Hatchery-specific state variables with total only
   var_plot_hatchery <- c("PNI", "pHOS_effective", "Outmigrating juvenile (10^5)")
 
   val_plot_hatchery <- filter(val, var_name %in% var_plot_hatchery, Origin == "Hatchery origin") %>%
-    summarise(value = sum(value), .by = c(Simulation, Year, Scenario, scenario, var_name))
+    summarise(value = sum(value), .by = c(Simulation, Year, Scenario, Option, var_name))
 
   val_plot_hatchery$var_name[val_plot_hatchery$var_name == "Outmigrating juvenile (10^5)"] <- "Releases"
   val_plot_hatchery$var_name[val_plot_hatchery$var_name == "pHOS_effective"] <- "pHOSeff"
 
   val_array_hatchery <- reshape2::acast(
     val_plot_hatchery,
-    list("Simulation", "Year", "Scenario", "scenario", "var_name"),
+    list("Simulation", "Year", "Scenario", "Option", "var_name"),
     fill = NA_real_,
     value.var = "value"
   )
-  names(dimnames(val_array_hatchery)) <- c("Simulation", "Year", "Scenario", "scenario", "var_name")
+  names(dimnames(val_array_hatchery)) <- c("Simulation", "Year", "Scenario", "Option", "var_name")
 
   output <- list(
     State = val_array,
@@ -83,8 +83,8 @@ output <- readRDS("tables/Sarita_app_results.rds")
 val <- reshape2::melt(output$State) %>%
   mutate(var_name = factor(var_name, var_plot))
 
-OM_plot <- "A. 10% freshwater survival"
-MP_plot <- c("(1) IRER1300 = 0.25, pNOB = 0.5", "(9) IRER1300 = 0.75, pNOB = 1")
+OM_plot <- "A3. 0.1 fs, MM, no MSF_T"
+MP_plot <- c("(1) IRER = 0, pNOB = 0.5", "(2) IRER = 0.25, pNOB = 0.5")
 sim <- 1:3
 
 # Line figure
@@ -96,11 +96,11 @@ for (i in 1:length(MP_plot)) {
   val_plot <- filter(
     val,
     Scenario == OM_plot,
-    scenario == MP_plot[i],
+    Option == MP_plot[i],
     #Year < 30,
     ifelse(var_name == "Outmigrating juvenile (10^5)", Year > 1, Year < 30)
   ) %>%
-    summarise(value = sum(value, na.rm = TRUE), .by = c(Year, var_name, Scenario, scenario, Simulation))
+    summarise(value = sum(value, na.rm = TRUE), .by = c(Year, var_name, Scenario, Option, Simulation))
 
   # What causes population to crash in subset of simulations
   if (FALSE && i == 2) {
@@ -121,7 +121,7 @@ for (i in 1:length(MP_plot)) {
   val_plot_origin <- filter(
     val,
     Scenario == OM_plot,
-    scenario == MP_plot[i],
+    Option == MP_plot[i],
     #Year < 30,
     ifelse(var_name == "Outmigrating juvenile (10^5)", Year > 1, Year < 30)
   )
@@ -145,7 +145,7 @@ for (i in 1:length(MP_plot)) {
       Simulation == x,
       ifelse(var_name == "Outmigrating juvenile (10^5)", Year > 1, Year < 30)
     ) %>%
-      summarise(value = sum(value), .by = c(Year, var_name, Origin, Scenario, scenario))
+      summarise(value = sum(value), .by = c(Year, var_name, Origin, Scenario, Option))
 
     g <- ggplot(val_plot_sim, aes(Year, value)) +
       facet_wrap(vars(var_name), scales = "free_y") +
