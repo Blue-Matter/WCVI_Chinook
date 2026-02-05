@@ -26,10 +26,11 @@ if (FALSE) {
 
     if (!g_i$MM) {
       pNOB <- NA_real_
-      IRER <- 0
+      #IRER <- 0
     }
 
-    expand.grid(IRER = IRER, pNOB_target = pNOB) %>% cbind(g_i) %>%
+    expand.grid(IRER = IRER, pNOB_target = pNOB) %>%
+      cbind(g_i) %>%
       mutate(Option_number = 1:n())
 
   }) %>%
@@ -40,6 +41,7 @@ if (FALSE) {
                                   ifelse(MM, "MM, ", "no MM, "),
                                   ifelse(MSF_T, "MSF_T", "no MSF_T"))) %>%
     mutate(n = 1:n())
+
   readr::write_csv(g3, file.path("tables", "Sarita_scenarios.csv"))
 }
 
@@ -62,7 +64,6 @@ f_brood <- function(NO, HO, stray, m = 1, ptarget_NOB = 0.5, pmax_NOB = 0.5, pma
   if (sum(NO, HO) > min_esc) {
     # Rule 2: Brood <= 33% of in-river return
     max_brood <- pmax_esc * sum(NO, HO)
-
 
     if (m == 1) {
       # Rule 3: total brood cannot exceed twice the natural brood available.
@@ -112,6 +113,8 @@ f_brood <- function(NO, HO, stray, m = 1, ptarget_NOB = 0.5, pmax_NOB = 0.5, pma
         ptake_HOB <- HOB_total/sum(HO)
         HOB_unmarked[] <- ptake_HOB * HO
       }
+    } else {
+      stop("Brood rule only accommodates mark rate of zero or 1")
     }
   }
 
@@ -120,16 +123,43 @@ f_brood <- function(NO, HO, stray, m = 1, ptarget_NOB = 0.5, pmax_NOB = 0.5, pma
 
 # Define catch rule
 # Code assumes mark rate = 1!
-f_catch <- function(NO, HO, m, targetER = 0.3, min_esc = 1300) {
+f_catch <- function(NO, HO, m = 1, targetER = 0.3, min_esc = 1300, output = c("HO", "NO")) {
+
+  output <- match.arg(output)
   total_esc <- sum(NO, HO)
+
   if (total_esc < min_esc) {
     ER <- 0
   } else {
-    HO_notavail <- max(0, min_esc - sum(NO))
-    HO_avail <- sum(HO) - HO_notavail
 
-    Catch <- targetER * HO_avail
-    ER <- Catch/sum(HO)
+    if (m == 1) {
+
+      if (output == "HO") {
+        HO_notavail <- max(0, min_esc - sum(NO))
+        HO_avail <- sum(HO) - HO_notavail
+
+        Catch <- targetER * HO_avail
+        ER <- Catch/sum(HO)
+      } else {
+        ER <- 0
+      }
+
+    } else if (m == 0) {
+
+      total_catch <- targetER * (total_esc - min_esc)
+      pNO <- sum(NO)/sum(NO, HO)
+
+      if (output == "HO") {
+        Catch_HO <- (1 - pNO) * total_catch
+        ER <- sum(Catch_HO)/sum(HO)
+      } else {
+        Catch_NO <- pNO * total_catch
+        ER <- sum(Catch_NO)/sum(NO)
+      }
+
+    } else {
+      stop("Catch rule only accommodates mark rate of zero or 1")
+    }
   }
   return(ER)
 }
@@ -138,7 +168,7 @@ f_catch <- function(NO, HO, m, targetER = 0.3, min_esc = 1300) {
 ### Do simulation
 library(snowfall)
 library(pbapply)
-sfInit(TRUE, 9)
+sfInit(TRUE, 12)
 
 sfExport(list = c("f_catch", "f_brood"))
 
@@ -163,10 +193,14 @@ sim_function <- function(i, g) {
   formals(SOM@Hatchery@f_brood)$ptarget_NOB <- g$pNOB_target[i]
 
   # Mass marking of Sarita fish
-  # If no MM, then mark rate = 0
+  # If no MM, then mark rate = 0 and add in-river fishery for natural-origin
   if (!g$MM[i]) {
     SOM@Hatchery@m <- 0
     formals(SOM@Hatchery@f_brood)$m <- 0
+
+    SOM@Hatchery@premove_NOS <- f_catch
+    formals(SOM@Hatchery@premove_NOS)$targetER <- g$IRER[i]
+    formals(SOM@Hatchery@premove_NOS)$output <- "NO"
   }
 
   # Mark-selective terminal marine fishery
@@ -186,10 +220,17 @@ sim_function <- function(i, g) {
   # Run projection
   SMSE <- salmonMSE(SOM)
 
-  # Report in-river ER
-  SMSE@Misc$inriver_catch <- salmonMSE:::get_salmonMSE_var(salmonMSE_env$H, "HOS_remove")
-  SMSE@Misc$ER_inriver <- SMSE@Misc$inriver_catch/(apply(SMSE@Escapement_HOS[, 1, , 1:29], c(1, 3), sum) - SMSE@HOB[, 1, 1:29])
-  SMSE@Misc$ER_inriver[is.na(SMSE@Misc$ER_inriver)] <- 0
+  # Report in-river catch and ER
+  SMSE@Misc$inriver_catch <- list(
+    HOS = salmonMSE:::get_salmonMSE_var(salmonMSE_env$H, "HOS_remove"),
+    NOS = salmonMSE:::get_salmonMSE_var(salmonMSE_env$N, "NOS_remove")
+  )
+  SMSE@Misc$ER_inriver <- list(
+    HOS = SMSE@Misc$inriver_catch$HOS/(apply(SMSE@Escapement_HOS[, 1, , 1:29], c(1, 3), sum) - SMSE@HOB[, 1, 1:29]),
+    NOS = SMSE@Misc$inriver_catch$NOS/(apply(SMSE@Escapement_NOS[, 1, , 1:29], c(1, 3), sum) - SMSE@NOB[, 1, 1:29])
+  )
+  SMSE@Misc$ER_inriver$HOS[is.na(SMSE@Misc$ER_inriver$HOS)] <- 0
+  SMSE@Misc$ER_inriver$NOS[is.na(SMSE@Misc$ER_inriver$NOS)] <- 0
 
   # Save object
   saveRDS(SMSE, file = file.path("SMSE", paste0("Sarita", i, ".rds")))
@@ -198,5 +239,5 @@ sim_function <- function(i, g) {
 }
 
 # Run simulation
-pblapply(1:nOM, sim_function, g = g, cl = snowfall::sfGetCluster())
+pblapply(7:nOM, sim_function, g = g, cl = snowfall::sfGetCluster())
 sfStop()

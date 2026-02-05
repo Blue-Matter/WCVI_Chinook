@@ -16,7 +16,7 @@
     } else if (var == "IR_Return") {
       res <- apply(SMSE@Escapement_NOS[, s, , ] + SMSE@Escapement_HOS[, s, , ], c(1, 3), sum)
     } else if (var == "IR_Catch") {
-      res <- SMSE@Misc$inriver_catch
+      res <- SMSE@Misc$inriver_catch$HOS + SMSE@Misc$inriver_catch$NOS
     } else {
       res <- plot_statevar_ts(SMSE, var, figure = FALSE, quant = FALSE)
     }

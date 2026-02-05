@@ -1,43 +1,55 @@
 IRER,pNOB_target,fs,Letter,MSF_T,MM,Number,Option_number,Scenario,Option_name,Scenario_name,n
 0,NA,0.1,A,FALSE,FALSE,1,1,A1,(1) IRER = 0,"A1. 0.1 fs, no MM, no MSF_T",1
-0,NA,0.1,A,TRUE,FALSE,2,1,A2,(1) IRER = 0,"A2. 0.1 fs, no MM, MSF_T",2
-0,0.5,0.1,A,FALSE,TRUE,3,1,A3,"(1) IRER = 0, pNOB = 0.5","A3. 0.1 fs, MM, no MSF_T",3
-0.25,0.5,0.1,A,FALSE,TRUE,3,2,A3,"(2) IRER = 0.25, pNOB = 0.5","A3. 0.1 fs, MM, no MSF_T",4
-0.75,0.5,0.1,A,FALSE,TRUE,3,3,A3,"(3) IRER = 0.75, pNOB = 0.5","A3. 0.1 fs, MM, no MSF_T",5
-0,1,0.1,A,FALSE,TRUE,3,4,A3,"(4) IRER = 0, pNOB = 1","A3. 0.1 fs, MM, no MSF_T",6
-0.25,1,0.1,A,FALSE,TRUE,3,5,A3,"(5) IRER = 0.25, pNOB = 1","A3. 0.1 fs, MM, no MSF_T",7
-0.75,1,0.1,A,FALSE,TRUE,3,6,A3,"(6) IRER = 0.75, pNOB = 1","A3. 0.1 fs, MM, no MSF_T",8
-0,0.5,0.1,A,TRUE,TRUE,4,1,A4,"(1) IRER = 0, pNOB = 0.5","A4. 0.1 fs, MM, MSF_T",9
-0.25,0.5,0.1,A,TRUE,TRUE,4,2,A4,"(2) IRER = 0.25, pNOB = 0.5","A4. 0.1 fs, MM, MSF_T",10
-0.75,0.5,0.1,A,TRUE,TRUE,4,3,A4,"(3) IRER = 0.75, pNOB = 0.5","A4. 0.1 fs, MM, MSF_T",11
-0,1,0.1,A,TRUE,TRUE,4,4,A4,"(4) IRER = 0, pNOB = 1","A4. 0.1 fs, MM, MSF_T",12
-0.25,1,0.1,A,TRUE,TRUE,4,5,A4,"(5) IRER = 0.25, pNOB = 1","A4. 0.1 fs, MM, MSF_T",13
-0.75,1,0.1,A,TRUE,TRUE,4,6,A4,"(6) IRER = 0.75, pNOB = 1","A4. 0.1 fs, MM, MSF_T",14
-0,NA,0.15,B,FALSE,FALSE,1,1,B1,(1) IRER = 0,"B1. 0.15 fs, no MM, no MSF_T",15
-0,NA,0.15,B,TRUE,FALSE,2,1,B2,(1) IRER = 0,"B2. 0.15 fs, no MM, MSF_T",16
-0,0.5,0.15,B,FALSE,TRUE,3,1,B3,"(1) IRER = 0, pNOB = 0.5","B3. 0.15 fs, MM, no MSF_T",17
-0.25,0.5,0.15,B,FALSE,TRUE,3,2,B3,"(2) IRER = 0.25, pNOB = 0.5","B3. 0.15 fs, MM, no MSF_T",18
-0.75,0.5,0.15,B,FALSE,TRUE,3,3,B3,"(3) IRER = 0.75, pNOB = 0.5","B3. 0.15 fs, MM, no MSF_T",19
-0,1,0.15,B,FALSE,TRUE,3,4,B3,"(4) IRER = 0, pNOB = 1","B3. 0.15 fs, MM, no MSF_T",20
-0.25,1,0.15,B,FALSE,TRUE,3,5,B3,"(5) IRER = 0.25, pNOB = 1","B3. 0.15 fs, MM, no MSF_T",21
-0.75,1,0.15,B,FALSE,TRUE,3,6,B3,"(6) IRER = 0.75, pNOB = 1","B3. 0.15 fs, MM, no MSF_T",22
-0,0.5,0.15,B,TRUE,TRUE,4,1,B4,"(1) IRER = 0, pNOB = 0.5","B4. 0.15 fs, MM, MSF_T",23
-0.25,0.5,0.15,B,TRUE,TRUE,4,2,B4,"(2) IRER = 0.25, pNOB = 0.5","B4. 0.15 fs, MM, MSF_T",24
-0.75,0.5,0.15,B,TRUE,TRUE,4,3,B4,"(3) IRER = 0.75, pNOB = 0.5","B4. 0.15 fs, MM, MSF_T",25
-0,1,0.15,B,TRUE,TRUE,4,4,B4,"(4) IRER = 0, pNOB = 1","B4. 0.15 fs, MM, MSF_T",26
-0.25,1,0.15,B,TRUE,TRUE,4,5,B4,"(5) IRER = 0.25, pNOB = 1","B4. 0.15 fs, MM, MSF_T",27
-0.75,1,0.15,B,TRUE,TRUE,4,6,B4,"(6) IRER = 0.75, pNOB = 1","B4. 0.15 fs, MM, MSF_T",28
-0,NA,0.2,C,FALSE,FALSE,1,1,C1,(1) IRER = 0,"C1. 0.2 fs, no MM, no MSF_T",29
-0,NA,0.2,C,TRUE,FALSE,2,1,C2,(1) IRER = 0,"C2. 0.2 fs, no MM, MSF_T",30
-0,0.5,0.2,C,FALSE,TRUE,3,1,C3,"(1) IRER = 0, pNOB = 0.5","C3. 0.2 fs, MM, no MSF_T",31
-0.25,0.5,0.2,C,FALSE,TRUE,3,2,C3,"(2) IRER = 0.25, pNOB = 0.5","C3. 0.2 fs, MM, no MSF_T",32
-0.75,0.5,0.2,C,FALSE,TRUE,3,3,C3,"(3) IRER = 0.75, pNOB = 0.5","C3. 0.2 fs, MM, no MSF_T",33
-0,1,0.2,C,FALSE,TRUE,3,4,C3,"(4) IRER = 0, pNOB = 1","C3. 0.2 fs, MM, no MSF_T",34
-0.25,1,0.2,C,FALSE,TRUE,3,5,C3,"(5) IRER = 0.25, pNOB = 1","C3. 0.2 fs, MM, no MSF_T",35
-0.75,1,0.2,C,FALSE,TRUE,3,6,C3,"(6) IRER = 0.75, pNOB = 1","C3. 0.2 fs, MM, no MSF_T",36
-0,0.5,0.2,C,TRUE,TRUE,4,1,C4,"(1) IRER = 0, pNOB = 0.5","C4. 0.2 fs, MM, MSF_T",37
-0.25,0.5,0.2,C,TRUE,TRUE,4,2,C4,"(2) IRER = 0.25, pNOB = 0.5","C4. 0.2 fs, MM, MSF_T",38
-0.75,0.5,0.2,C,TRUE,TRUE,4,3,C4,"(3) IRER = 0.75, pNOB = 0.5","C4. 0.2 fs, MM, MSF_T",39
-0,1,0.2,C,TRUE,TRUE,4,4,C4,"(4) IRER = 0, pNOB = 1","C4. 0.2 fs, MM, MSF_T",40
-0.25,1,0.2,C,TRUE,TRUE,4,5,C4,"(5) IRER = 0.25, pNOB = 1","C4. 0.2 fs, MM, MSF_T",41
-0.75,1,0.2,C,TRUE,TRUE,4,6,C4,"(6) IRER = 0.75, pNOB = 1","C4. 0.2 fs, MM, MSF_T",42
+0.25,NA,0.1,A,FALSE,FALSE,1,2,A1,(2) IRER = 0.25,"A1. 0.1 fs, no MM, no MSF_T",2
+0.75,NA,0.1,A,FALSE,FALSE,1,3,A1,(3) IRER = 0.75,"A1. 0.1 fs, no MM, no MSF_T",3
+0,NA,0.1,A,TRUE,FALSE,2,1,A2,(1) IRER = 0,"A2. 0.1 fs, no MM, MSF_T",4
+0.25,NA,0.1,A,TRUE,FALSE,2,2,A2,(2) IRER = 0.25,"A2. 0.1 fs, no MM, MSF_T",5
+0.75,NA,0.1,A,TRUE,FALSE,2,3,A2,(3) IRER = 0.75,"A2. 0.1 fs, no MM, MSF_T",6
+0,0.5,0.1,A,FALSE,TRUE,3,1,A3,"(1) IRER = 0, pNOB = 0.5","A3. 0.1 fs, MM, no MSF_T",7
+0.25,0.5,0.1,A,FALSE,TRUE,3,2,A3,"(2) IRER = 0.25, pNOB = 0.5","A3. 0.1 fs, MM, no MSF_T",8
+0.75,0.5,0.1,A,FALSE,TRUE,3,3,A3,"(3) IRER = 0.75, pNOB = 0.5","A3. 0.1 fs, MM, no MSF_T",9
+0,1,0.1,A,FALSE,TRUE,3,4,A3,"(4) IRER = 0, pNOB = 1","A3. 0.1 fs, MM, no MSF_T",10
+0.25,1,0.1,A,FALSE,TRUE,3,5,A3,"(5) IRER = 0.25, pNOB = 1","A3. 0.1 fs, MM, no MSF_T",11
+0.75,1,0.1,A,FALSE,TRUE,3,6,A3,"(6) IRER = 0.75, pNOB = 1","A3. 0.1 fs, MM, no MSF_T",12
+0,0.5,0.1,A,TRUE,TRUE,4,1,A4,"(1) IRER = 0, pNOB = 0.5","A4. 0.1 fs, MM, MSF_T",13
+0.25,0.5,0.1,A,TRUE,TRUE,4,2,A4,"(2) IRER = 0.25, pNOB = 0.5","A4. 0.1 fs, MM, MSF_T",14
+0.75,0.5,0.1,A,TRUE,TRUE,4,3,A4,"(3) IRER = 0.75, pNOB = 0.5","A4. 0.1 fs, MM, MSF_T",15
+0,1,0.1,A,TRUE,TRUE,4,4,A4,"(4) IRER = 0, pNOB = 1","A4. 0.1 fs, MM, MSF_T",16
+0.25,1,0.1,A,TRUE,TRUE,4,5,A4,"(5) IRER = 0.25, pNOB = 1","A4. 0.1 fs, MM, MSF_T",17
+0.75,1,0.1,A,TRUE,TRUE,4,6,A4,"(6) IRER = 0.75, pNOB = 1","A4. 0.1 fs, MM, MSF_T",18
+0,NA,0.15,B,FALSE,FALSE,1,1,B1,(1) IRER = 0,"B1. 0.15 fs, no MM, no MSF_T",19
+0.25,NA,0.15,B,FALSE,FALSE,1,2,B1,(2) IRER = 0.25,"B1. 0.15 fs, no MM, no MSF_T",20
+0.75,NA,0.15,B,FALSE,FALSE,1,3,B1,(3) IRER = 0.75,"B1. 0.15 fs, no MM, no MSF_T",21
+0,NA,0.15,B,TRUE,FALSE,2,1,B2,(1) IRER = 0,"B2. 0.15 fs, no MM, MSF_T",22
+0.25,NA,0.15,B,TRUE,FALSE,2,2,B2,(2) IRER = 0.25,"B2. 0.15 fs, no MM, MSF_T",23
+0.75,NA,0.15,B,TRUE,FALSE,2,3,B2,(3) IRER = 0.75,"B2. 0.15 fs, no MM, MSF_T",24
+0,0.5,0.15,B,FALSE,TRUE,3,1,B3,"(1) IRER = 0, pNOB = 0.5","B3. 0.15 fs, MM, no MSF_T",25
+0.25,0.5,0.15,B,FALSE,TRUE,3,2,B3,"(2) IRER = 0.25, pNOB = 0.5","B3. 0.15 fs, MM, no MSF_T",26
+0.75,0.5,0.15,B,FALSE,TRUE,3,3,B3,"(3) IRER = 0.75, pNOB = 0.5","B3. 0.15 fs, MM, no MSF_T",27
+0,1,0.15,B,FALSE,TRUE,3,4,B3,"(4) IRER = 0, pNOB = 1","B3. 0.15 fs, MM, no MSF_T",28
+0.25,1,0.15,B,FALSE,TRUE,3,5,B3,"(5) IRER = 0.25, pNOB = 1","B3. 0.15 fs, MM, no MSF_T",29
+0.75,1,0.15,B,FALSE,TRUE,3,6,B3,"(6) IRER = 0.75, pNOB = 1","B3. 0.15 fs, MM, no MSF_T",30
+0,0.5,0.15,B,TRUE,TRUE,4,1,B4,"(1) IRER = 0, pNOB = 0.5","B4. 0.15 fs, MM, MSF_T",31
+0.25,0.5,0.15,B,TRUE,TRUE,4,2,B4,"(2) IRER = 0.25, pNOB = 0.5","B4. 0.15 fs, MM, MSF_T",32
+0.75,0.5,0.15,B,TRUE,TRUE,4,3,B4,"(3) IRER = 0.75, pNOB = 0.5","B4. 0.15 fs, MM, MSF_T",33
+0,1,0.15,B,TRUE,TRUE,4,4,B4,"(4) IRER = 0, pNOB = 1","B4. 0.15 fs, MM, MSF_T",34
+0.25,1,0.15,B,TRUE,TRUE,4,5,B4,"(5) IRER = 0.25, pNOB = 1","B4. 0.15 fs, MM, MSF_T",35
+0.75,1,0.15,B,TRUE,TRUE,4,6,B4,"(6) IRER = 0.75, pNOB = 1","B4. 0.15 fs, MM, MSF_T",36
+0,NA,0.2,C,FALSE,FALSE,1,1,C1,(1) IRER = 0,"C1. 0.2 fs, no MM, no MSF_T",37
+0.25,NA,0.2,C,FALSE,FALSE,1,2,C1,(2) IRER = 0.25,"C1. 0.2 fs, no MM, no MSF_T",38
+0.75,NA,0.2,C,FALSE,FALSE,1,3,C1,(3) IRER = 0.75,"C1. 0.2 fs, no MM, no MSF_T",39
+0,NA,0.2,C,TRUE,FALSE,2,1,C2,(1) IRER = 0,"C2. 0.2 fs, no MM, MSF_T",40
+0.25,NA,0.2,C,TRUE,FALSE,2,2,C2,(2) IRER = 0.25,"C2. 0.2 fs, no MM, MSF_T",41
+0.75,NA,0.2,C,TRUE,FALSE,2,3,C2,(3) IRER = 0.75,"C2. 0.2 fs, no MM, MSF_T",42
+0,0.5,0.2,C,FALSE,TRUE,3,1,C3,"(1) IRER = 0, pNOB = 0.5","C3. 0.2 fs, MM, no MSF_T",43
+0.25,0.5,0.2,C,FALSE,TRUE,3,2,C3,"(2) IRER = 0.25, pNOB = 0.5","C3. 0.2 fs, MM, no MSF_T",44
+0.75,0.5,0.2,C,FALSE,TRUE,3,3,C3,"(3) IRER = 0.75, pNOB = 0.5","C3. 0.2 fs, MM, no MSF_T",45
+0,1,0.2,C,FALSE,TRUE,3,4,C3,"(4) IRER = 0, pNOB = 1","C3. 0.2 fs, MM, no MSF_T",46
+0.25,1,0.2,C,FALSE,TRUE,3,5,C3,"(5) IRER = 0.25, pNOB = 1","C3. 0.2 fs, MM, no MSF_T",47
+0.75,1,0.2,C,FALSE,TRUE,3,6,C3,"(6) IRER = 0.75, pNOB = 1","C3. 0.2 fs, MM, no MSF_T",48
+0,0.5,0.2,C,TRUE,TRUE,4,1,C4,"(1) IRER = 0, pNOB = 0.5","C4. 0.2 fs, MM, MSF_T",49
+0.25,0.5,0.2,C,TRUE,TRUE,4,2,C4,"(2) IRER = 0.25, pNOB = 0.5","C4. 0.2 fs, MM, MSF_T",50
+0.75,0.5,0.2,C,TRUE,TRUE,4,3,C4,"(3) IRER = 0.75, pNOB = 0.5","C4. 0.2 fs, MM, MSF_T",51
+0,1,0.2,C,TRUE,TRUE,4,4,C4,"(4) IRER = 0, pNOB = 1","C4. 0.2 fs, MM, MSF_T",52
+0.25,1,0.2,C,TRUE,TRUE,4,5,C4,"(5) IRER = 0.25, pNOB = 1","C4. 0.2 fs, MM, MSF_T",53
+0.75,1,0.2,C,TRUE,TRUE,4,6,C4,"(6) IRER = 0.75, pNOB = 1","C4. 0.2 fs, MM, MSF_T",54

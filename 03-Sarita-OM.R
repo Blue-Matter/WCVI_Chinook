@@ -152,9 +152,10 @@ Hatchery <- new(
   #f_brood = f_brood,  # Function defined in script 4
   pmax_esc = 0.33,
   pmax_NOB = 0.5,      # SEP guideline, suggested by Lian
-  ptarget_NOB = 0.50,  # Hatchery data, Sarita AHA inputs, will evaluate a grid of 50, 75, 100 percent (see f_brood function in script 4)
+  ptarget_NOB = 0.50,  # Hatchery data, Sarita AHA inputs, will evaluate a grid (see f_brood function in script 4)
   phatchery = NA,
-  premove_HOS = 0,   # Stand-in for in-river fishery with HOS exploitation rates of 0.5, 0.7, or 0.99 (see f_catch function in script 4)
+  premove_HOS = 0,   # Stand-in for in-river fishery with grid of HOS exploitation rates (see f_catch function in script 4)
+  premove_NOS = 0,
   fec_brood = fec, #rep(3625, maxage) is used from Hatchery data, Sarita AHA input
   fitness_type = c("Ford", "none"),
   theta = c(100, 80),

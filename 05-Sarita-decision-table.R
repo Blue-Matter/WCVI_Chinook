@@ -63,7 +63,7 @@ IRR <- sapply(SMSE_list, function(x) {
   rename(Simulation = Var1, IR_Return = value, n = Var2)
 
 IRCatch <- sapply(SMSE_list, function(x) {
-  x@Misc$inriver_catch[, y]
+  x@Misc$inriver_catch$NOS[, y] + x@Misc$inriver_catch$HOS[, y]
 }) %>%
   reshape2::melt() %>%
   rename(Simulation = Var1, IR_Catch = value, n = Var2)
@@ -327,7 +327,7 @@ for (i in LETTERS[1:3]) {
   ggsave(file.path("figures", "SMSE", paste0("performance_table_", i, ".png")), g, width = 7.5, height = 7)
 
   # Short performance metrics
-  pm_short <- c("PNI", "Natural Spawners", "P_PNI50", "P_1300_NS")
+  pm_short <- c("PNI", "Natural Spawners", "P_PNI50", "P_1300_NS", "IR_Catch")
 
   d <- rbind(
     val_sim %>% select(Option, Scenario, variable, median),
@@ -372,7 +372,7 @@ g <- ggpubr::ggarrange(plotlist = glist, ncol = 3, widths = c(3, 2, 2))
 ggsave("figures/SMSE/performance_table_full.png", g, width = 17, height = 8)
 
 # Short performance metrics
-pm_short <- c("PNI", "Natural Spawners", "P_PNI50", "P_1300_NS")
+pm_short <- c("PNI", "Natural Spawners", "P_PNI50", "P_1300_NS", "IR_Catch")
 
 glist <- lapply(LETTERS[1:3], function(i) {
   d <- rbind(
@@ -384,7 +384,7 @@ glist <- lapply(LETTERS[1:3], function(i) {
     mutate(variable = factor(variable, pm_short))
 
   g <- plot_table(d, ncol = 1) +
-    geom_vline(xintercept = 2.5, linewidth = 1, linetype = 2) +
+    geom_vline(xintercept = c(2.5, 4.5), linewidth = 1, linetype = 2) +
     geom_hline(yintercept = 3.5, linewidth = 1)
 
   if (i == "A") {
@@ -479,7 +479,7 @@ ggsave(file.path("figures", "SMSE", "decisiontable_rel.png"), g, width = 7, heig
 # Tradeoff figure
 g <- val_sim %>%
   left_join(select(gr, IRER, pNOB_target, n)) %>%
-  tradeoff_grid(xname = "Natural Spawners", yname = "PNI", xlim = c(0, 10000), ylim = c(0, 1), ncol = 3) +
+  tradeoff_grid(xname = "Natural Spawners", yname = "PNI", xlim = c(0, 12000), ylim = c(0, 1), ncol = 3) +
   geom_vline(xintercept = 1300, linetype = 3) +
   geom_hline(yintercept = 0.5, linetype = 3)
 ggsave(file.path("figures", "SMSE", "tradeoff_PNI_sp.png"), g, width = 7, height = 5)
@@ -491,6 +491,13 @@ g <- val_prob %>%
   geom_vline(xintercept = 0.5, linetype = 3) +
   geom_hline(yintercept = 0.5, linetype = 3)
 ggsave(file.path("figures", "SMSE", "tradeoff_prob.png"), g, width = 7, height = 5)
+
+g <- val_sim %>%
+  left_join(select(gr, IRER, pNOB_target, n)) %>%
+  tradeoff_grid(xname = "IR_Catch", yname = "PNI", xlim = c(0, 4000), ylim = c(0, 1), ncol = 3) +
+  geom_hline(yintercept = 0.5, linetype = 3) +
+  labs(x = "In-river catch")
+ggsave(file.path("figures", "SMSE", "tradeoff_PNI_IRC.png"), g, width = 7, height = 5)
 
 
 g <- val_sim %>%
