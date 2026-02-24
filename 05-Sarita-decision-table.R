@@ -140,6 +140,17 @@ P_PNI50 <- sapply(SMSE_list, function(x) {
   mean(PNI >= 0.5, na.rm = TRUE)
 })
 
+# Check proportion of simulations where PNI is not defined
+# (No brood, but intermittently due to brood rule requiring > 600 spawners)
+# This comes out to between 0-5%, not a big deal
+if (FALSE) {
+  PNI_NA <- sapply(SMSE_list, function(x) {
+    PNI <- x@PNI[, 1, y]
+    mean(is.na(PNI))
+  })
+  PNI_NA
+}
+
 val_prob <- data.frame(n = 1:nrow(gr)) %>%
   mutate(
     P_PNI50 = P_PNI50,
@@ -564,6 +575,7 @@ g <- val_prob2 %>%
                 xlim = c(0, 1), ylim = c(0, 1), is_prob = TRUE) +
   geom_vline(xintercept = 0.5, linetype = 3) +
   geom_hline(yintercept = 0.5, linetype = 3) +
+  theme(panel.spacing = unit(0, "in")) +
   scale_colour_hue(labels = c("0.5" = "0.5 (MM)", "1" = "1 (MM)", "NA" = "NA (no MM)"))
 ggsave(file.path("figures", "SMSE", "tradeoff_prob3.png"), g, width = 7, height = 4)
 
