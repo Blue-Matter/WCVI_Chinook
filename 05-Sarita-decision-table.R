@@ -595,6 +595,28 @@ g <- val_sim2 %>%
   scale_colour_hue(labels = c("0.5" = "0.5 (MM)", "1" = "1 (MM)", "NA" = "NA (no MM)"))
 ggsave(file.path("figures", "SMSE", "tradeoff_PNI_sp3.png"), g, width = 7, height = 4)
 
+#### Revise tradeoff figure layout 3 - revert to four rows but switch fw and IRER
+g <- val_prob2 %>%
+  mutate(cols = paste("IRER =", IRER)) %>%
+  tradeoff_grid(xname = "P_1300_NS", yname = "P_PNI50",
+                x2 = "fs", x2lab = "Freshwater\nsurvival",
+                xlim = c(0, 1), ylim = c(0, 1), is_prob = TRUE) +
+  geom_vline(xintercept = 0.5, linetype = 3) +
+  geom_hline(yintercept = 0.5, linetype = 3) +
+  theme(panel.spacing = unit(0, "in")) +
+  scale_colour_hue(labels = c("0.5" = "0.5 (MM)", "1" = "1 (MM)", "NA" = "NA (no MM)"))
+ggsave(file.path("figures", "SMSE", "tradeoff_prob3.png"), g, width = 7, height = 5)
+
+g <- val_sim2 %>%
+  mutate(cols = paste("IRER =", IRER)) %>%
+  tradeoff_grid(xname = "Natural Spawners", yname = "PNI",
+                x2 = "fs", x2lab = "Freshwater\nsurvival",
+                xlim = c(0, 12000), ylim = c(0, 1)) +
+  geom_vline(xintercept = 1300, linetype = 3) +
+  geom_hline(yintercept = 0.5, linetype = 3) +
+  theme(panel.spacing = unit(0, "in"))
+ggsave(file.path("figures", "SMSE", "tradeoff_PNI_sp3.png"), g, width = 7, height = 5)
+
 #### Plot Simulated CYER
 CYER_PT <- calc_CYER(SMSE_list[[1]], PT = TRUE)
 CYER_T <- calc_CYER(SMSE_list[[1]], PT = FALSE)
