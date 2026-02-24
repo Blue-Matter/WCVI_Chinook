@@ -15,6 +15,13 @@ scenario_unique <- unique(gr$Scenario) # Represented by individual table
 
 SMSE_list <- lapply(gr$n, function(i) {
   SMSE <- readRDS(file.path("SMSE", paste0("Sarita", i, ".rds")))
+
+  # Update PNI = 1 when there is no brood & pHOS = 0
+  Brood <- SMSE@HOB + SMSE@NOB
+  NoBrood <- Brood < 0.001
+  pHOS_zero <- SMSE@pHOS_effective < 0.001
+  SMSE@PNI[pHOS_zero & NoBrood] <- 1
+
   return(SMSE)
 })
 
@@ -129,10 +136,8 @@ P_1300 <- sapply(SMSE_list, function(x) {
 })
 
 P_PNI50 <- sapply(SMSE_list, function(x) {
-  NOB <- x@NOB[, 1, y]
   PNI <- x@PNI[, 1, y]
-  PNI[is.na(PNI) & NOB == 0] <- 0
-  mean(PNI >= 0.5)
+  mean(PNI >= 0.5, na.rm = TRUE)
 })
 
 val_prob <- data.frame(n = 1:nrow(gr)) %>%
@@ -477,36 +482,106 @@ g$facet$params$free$x <- TRUE
 ggsave(file.path("figures", "SMSE", "decisiontable_rel.png"), g, width = 7, height = 5)
 
 # Tradeoff figure
-g <- val_sim %>%
-  left_join(select(gr, IRER, pNOB_target, n)) %>%
+val_sim2 <- val_sim %>%
+  left_join(select(gr, IRER, pNOB_target, n, Letter, Number, fs, MM, MSF_T)) %>%
+  mutate(rows = paste0(ifelse(MM, "MM", "no MM"), ifelse(MSF_T, ", MSF_T", ", no MSF_T")),
+         cols = paste0(fs, " fs")) %>%
+  mutate(rows = factor(rows, unique(rows)))
+g <- val_sim2 %>%
   tradeoff_grid(xname = "Natural Spawners", yname = "PNI", xlim = c(0, 12000), ylim = c(0, 1), ncol = 3) +
+  theme(panel.spacing = unit(0, "in")) +
   geom_vline(xintercept = 1300, linetype = 3) +
   geom_hline(yintercept = 0.5, linetype = 3)
 ggsave(file.path("figures", "SMSE", "tradeoff_PNI_sp.png"), g, width = 7, height = 5)
 
-g <- val_prob %>%
-  left_join(select(gr, IRER, pNOB_target, n)) %>%
-  mutate(lwr = value, median = value, upr = value) %>%
-  tradeoff_grid(xname = "P_1300_NS", yname = "P_PNI50", xlim = c(0, 1), ylim = c(0, 1), ncol = 3) +
+val_prob2 <- val_prob %>%
+  left_join(select(gr, IRER, pNOB_target, n, Letter, Number, fs, MM, MSF_T)) %>%
+  mutate(rows = paste0(ifelse(MM, "MM", "no MM"), ifelse(MSF_T, ", MSF_T", ", no MSF_T")),
+         cols = paste0(fs, " fs")) %>%
+  mutate(rows = factor(rows, unique(rows))) %>%
+  mutate(median = value)
+g <- val_prob2 %>%
+  tradeoff_grid(xname = "P_1300_NS", yname = "P_PNI50", xlim = c(0, 1), ylim = c(0, 1), ncol = 3, is_prob = TRUE) +
+  theme(panel.spacing = unit(0, "in")) +
   geom_vline(xintercept = 0.5, linetype = 3) +
   geom_hline(yintercept = 0.5, linetype = 3)
 ggsave(file.path("figures", "SMSE", "tradeoff_prob.png"), g, width = 7, height = 5)
 
-g <- val_sim %>%
-  left_join(select(gr, IRER, pNOB_target, n)) %>%
+g <- val_sim2 %>%
   tradeoff_grid(xname = "IR_Catch", yname = "PNI", xlim = c(0, 4000), ylim = c(0, 1), ncol = 3) +
   geom_hline(yintercept = 0.5, linetype = 3) +
+  theme(panel.spacing = unit(0, "in")) +
   labs(x = "In-river catch")
 ggsave(file.path("figures", "SMSE", "tradeoff_PNI_IRC.png"), g, width = 7, height = 5)
 
 
-g <- val_sim %>%
-  left_join(select(gr, IRER, pNOB_target, n)) %>%
+g <- val_sim2 %>%
   tradeoff_grid(xname = "Releases", yname = "PNI", xlim = c(0, 5), ylim = c(0, 1),
                 ncol = 3, xlab = "Hatchery releases (100,000s)") +
-  geom_hline(yintercept = 0.5, linetype = 3)
-ggsave(file.path(dir_dt, "tradeoff_PNI_rel.png"), g, width = 7, height = 5)
+  geom_hline(yintercept = 0.5, linetype = 3) +
+  theme(panel.spacing = unit(0, "in"))
+ggsave(file.path("figures", "SMSE", "tradeoff_PNI_rel.png"), g, width = 7, height = 5)
 
+
+#### Revise tradeoff figure layout 1
+g <- val_prob2 %>%
+  mutate(
+    pNOB_target = ifelse(is.na(pNOB_target), "NA", pNOB_target) |> factor(),
+    rows = ifelse(MSF_T, "MSF_T", "no MSF_T"),
+    rows = factor(rows, levels = unique(rows))
+  ) %>%
+  tradeoff_grid(xname = "P_1300_NS", yname = "P_PNI50", xlim = c(0, 1), ylim = c(0, 1), ncol = 3, is_prob = TRUE) +
+  geom_vline(xintercept = 0.5, linetype = 3) +
+  geom_hline(yintercept = 0.5, linetype = 3) +
+  theme(panel.spacing = unit(0, "in")) +
+  scale_colour_hue(labels = c("0.5" = "0.5 (MM)", "1" = "1 (MM)", "NA" = "NA (no MM)"))
+ggsave(file.path("figures", "SMSE", "tradeoff_prob2.png"), g, width = 7, height = 4)
+
+g <- val_sim2 %>%
+  mutate(
+    pNOB_target = ifelse(is.na(pNOB_target), "NA", pNOB_target) |> factor(),
+    rows = ifelse(MSF_T, "MSF_T", "no MSF_T"),
+    rows = factor(rows, levels = unique(rows))
+  ) %>%
+  tradeoff_grid(xname = "Natural Spawners", yname = "PNI", xlim = c(0, 12000), ylim = c(0, 1), ncol = 3) +
+  geom_vline(xintercept = 1300, linetype = 3) +
+  geom_hline(yintercept = 0.5, linetype = 3) +
+  theme(panel.spacing = unit(0, "in")) +
+  scale_colour_hue(labels = c("0.5" = "0.5 (MM)", "1" = "1 (MM)", "NA" = "NA (no MM)"))
+ggsave(file.path("figures", "SMSE", "tradeoff_PNI_sp2.png"), g, width = 7, height = 4)
+
+
+#### Revise tradeoff figure layout 2
+g <- val_prob2 %>%
+  mutate(
+    pNOB_target = ifelse(is.na(pNOB_target), "NA", pNOB_target) |> factor(),
+    rows = ifelse(MSF_T, "MSF_T", "no MSF_T"),
+    rows = factor(rows, levels = unique(rows)),
+    cols = paste("IRER =", IRER)
+  ) %>%
+  tradeoff_grid(xname = "P_1300_NS", yname = "P_PNI50",
+                x2 = "fs", x2lab = "Freshwater\nsurvival",
+                xlim = c(0, 1), ylim = c(0, 1), is_prob = TRUE) +
+  geom_vline(xintercept = 0.5, linetype = 3) +
+  geom_hline(yintercept = 0.5, linetype = 3) +
+  scale_colour_hue(labels = c("0.5" = "0.5 (MM)", "1" = "1 (MM)", "NA" = "NA (no MM)"))
+ggsave(file.path("figures", "SMSE", "tradeoff_prob3.png"), g, width = 7, height = 4)
+
+g <- val_sim2 %>%
+  mutate(
+    pNOB_target = ifelse(is.na(pNOB_target), "NA", pNOB_target) |> factor(),
+    rows = ifelse(MSF_T, "MSF_T", "no MSF_T"),
+    rows = factor(rows, levels = unique(rows)),
+    cols = paste("IRER =", IRER)
+  ) %>%
+  tradeoff_grid(xname = "Natural Spawners", yname = "PNI",
+                x2 = "fs", x2lab = "Freshwater\nsurvival",
+                xlim = c(0, 12000), ylim = c(0, 1)) +
+  geom_vline(xintercept = 1300, linetype = 3) +
+  geom_hline(yintercept = 0.5, linetype = 3) +
+  theme(panel.spacing = unit(0, "in")) +
+  scale_colour_hue(labels = c("0.5" = "0.5 (MM)", "1" = "1 (MM)", "NA" = "NA (no MM)"))
+ggsave(file.path("figures", "SMSE", "tradeoff_PNI_sp3.png"), g, width = 7, height = 4)
 
 #### Plot Simulated CYER
 CYER_PT <- calc_CYER(SMSE_list[[1]], PT = TRUE)

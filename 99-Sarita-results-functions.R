@@ -127,24 +127,102 @@ decision_table_grid <- function(x, title = "PNI", ncol = 2,
   g
 }
 
-tradeoff_grid <- function(val_sim, xname = "Total Spawners", yname = "PNI", xlab = xname, ylab = yname,
-                          xlim = NULL, ylim = NULL, ncol = 2) {
+plot_tradeoff_custom <- function(pm1, pm2, x1, x2, xlab, ylab, x1lab, x2lab,
+                                 scenario,
+                                 scenario_rows, scenario_cols,
+                                 ncol = NULL, dir = "v") {
 
-  g <- salmonMSE::plot_tradeoff(
-    val_sim %>% filter(variable == xname) %>% select(lwr, median, upr) %>% as.matrix(),
-    val_sim %>% filter(variable == yname) %>% select(lwr, median, upr) %>% as.matrix(),
-    val_sim %>% filter(variable == xname) %>% pull(pNOB_target) %>% factor(),
-    val_sim %>% filter(variable == xname) %>% pull(IRER) %>% factor(),
+  if (missing(x1)) x1 <- 0
+  if (missing(x2)) x2 <- 1
+
+  dt <- data.frame(
+    pm1 = if (is.matrix(pm1)) pm1[, 2] else pm1,
+    pm2 = if (is.matrix(pm1)) pm2[, 2] else pm2,
+    pm1_lower = if (is.matrix(pm1)) pm1[, 1] else pm1,
+    pm2_lower = if (is.matrix(pm1)) pm2[, 1] else pm2,
+    pm1_upper = if (is.matrix(pm1)) pm1[, 3] else pm1,
+    pm2_upper = if (is.matrix(pm1)) pm2[, 3] else pm2,
+    scenario_rows = scenario_rows,
+    scenario_cols = scenario_cols,
+    x1 = x1,
+    x2 = x2
+  )
+
+  if (!missing(scenario)) {
+    dt$scenario <- scenario
+  } else if (!missing(scenario_rows) && !missing(scenario_cols)) {
+    dt$scenario_rows <- scenario_rows
+    dt$scenario_cols <- scenario_cols
+  }
+
+  g <- ggplot(dt, aes(.data$pm1, .data$pm2, colour = .data$x1, shape = .data$x2)) +
+    geom_point() +
+    theme_bw()
+
+  if (is.matrix(pm1)) {
+    g <- g + geom_linerange(aes(xmin = .data$pm1_lower, xmax = .data$pm1_upper), linewidth = 0.25)
+  }
+  if (is.matrix(pm2)) {
+    g <- g + geom_linerange(aes(ymin = .data$pm2_lower, ymax = .data$pm2_upper), linewidth = 0.25)
+  }
+
+  if (length(x1) == 1) {
+    g <- g +
+      scale_colour_manual(values = GeomPoint$default_aes$colour) +
+      guides(colour = "none")
+  }
+  if (length(x2) == 2) {
+    g <- g +
+      scale_shape_manual(values = GeomPoint$default_aes$shape) +
+      guides(shape = "none")
+  }
+
+  if (!missing(scenario)) {
+    g <- g +
+      facet_wrap(vars(.data$scenario), ncol = ncol, dir = dir) +
+      theme(strip.background = element_blank())
+  } else if (!missing(scenario_rows) && !missing(scenario_cols)) {
+    g <- g +
+      facet_grid(vars(.data$scenario_rows), vars(.data$scenario_cols)) +
+      theme(strip.background = element_blank())
+  }
+
+  if (!missing(xlab)) g <- g + labs(x = xlab)
+  if (!missing(ylab)) g <- g + labs(y = ylab)
+  if (!missing(x1lab)) g <- g + labs(colour = x1lab)
+  if (!missing(x2lab)) g <- g + labs(shape = x2lab)
+
+  return(g)
+}
+
+tradeoff_grid <- function(val_sim, xname = "Total Spawners", yname = "PNI", xlab = xname, ylab = yname,
+                          x1 = "pNOB_target", x2 = "IRER", x1lab = "pNOB target", x2lab = "IRER 1300",
+                          xlim = NULL, ylim = NULL, ncol = 2, is_prob = FALSE) {
+
+  if (is_prob) {
+    pm1 <- val_sim %>% filter(variable == xname) %>% pull(.data$median)
+    pm2 <- val_sim %>% filter(variable == yname) %>% pull(.data$median)
+  } else {
+    pm1 <- val_sim %>% filter(variable == xname) %>% select(lwr, median, upr) %>% as.matrix()
+    pm2 <- val_sim %>% filter(variable == yname) %>% select(lwr, median, upr) %>% as.matrix()
+  }
+
+  g <- plot_tradeoff_custom(
+    pm1,
+    pm2,
+    val_sim %>% filter(variable == xname) %>% pull(.data[[x1]]) %>% factor(),
+    val_sim %>% filter(variable == xname) %>% pull(.data[[x2]]) %>% factor(),
     xlab = xlab,
     ylab = ylab,
-    x1lab = "pNOB target",
-    x2lab = "IRER 1300",
-    scenario = val_sim %>% filter(variable == xname) %>% pull(Scenario),
+    x1lab = x1lab,
+    x2lab = x2lab,
+    scenario_rows = val_sim %>% filter(variable == xname) %>% pull(.data$rows),
+    scenario_cols = val_sim %>% filter(variable == xname) %>% pull(.data$cols),
     ncol = ncol
   ) +
     scale_shape_manual(values = c(1, 4, 16)) +
-    coord_cartesian(xlim = xlim, ylim = ylim)
-
+    coord_cartesian(xlim = xlim, ylim = ylim) +
+    theme(panel.grid = element_blank())
   g
 }
 
