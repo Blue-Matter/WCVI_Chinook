@@ -187,127 +187,128 @@ readr::write_csv(df, file = "tables/Sarita_outcomes_sim_year_app.csv") # Save fo
 rm(df)
 
 #### Run loop over each scenario to create performance metric tables ----
-pm_primary <- c("PNI", "Natural Spawners", "P_PNI50", "P_250_NOS", "P_476_NOS", "P_250_NS", "P_476_NS", "P_1300_NS")
-pm_ancillary <- c("IR_Return", "IR_Catch", "Brood", "Egg", "Releases",
-                  "pNOBeff", "pHOSeff", "pWILD") #"Mean age")
 
 # Time series medians
-for (i in 1:length(scenario_unique)) {
-
-  ind <- gr$Scenario == scenario_unique[i]
-
-  dir <- file.path("figures", "SMSE", paste0("Set", i, "_"))
-
-  #### Time series barplots (annual medians for by scenario for each management option)
-  ind2 <- which(ind)
-
-  png(paste0(dir, "spawners_prop.png"), height = 6, width = 6, units = "in", res = 400)
-  par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
-  for (j in 1:nrow(Option_name)) {
-    jj <- ind2[j]
-    plot_spawners(SMSE_list[[jj]])
-    box()
-    title(Option_name$scenario[j], cex.main = 0.75)
-  }
-  dev.off()
-
-  png(paste0(dir, "spawners.png"), height = 6, width = 6, units = "in", res = 400)
-  par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
-  for (j in 1:nrow(Option_name)) {
-    jj <- ind2[j]
-    plot_spawners(SMSE_list[[jj]], prop = FALSE, ylim = c(0, 4000))
-    box()
-    title(Option_name$scenario[j], cex.main = 0.75)
-  }
-  dev.off()
-
-  png(paste0(dir, "p_brood.png"), height = 6, width = 6, units = "in", res = 400)
-  par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
-  for (j in 1:nrow(Option_name)) {
-    jj <- ind2[j]
-    plot_escapement(SMSE_list[[jj]], ylim = c(0, 1))
-    box()
-    title(Option_name$scenario[j], cex.main = 0.75)
-  }
-  dev.off()
-
-  png(paste0(dir, "pHOS_fitness.png"), height = 6, width = 6, units = "in", res = 400)
-  par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
-  for (j in 1:nrow(Option_name)) {
-    jj <- ind2[j]
-    plot_fitness(SMSE_list[[jj]], ylim = c(0, 1))
-    title(Option_name$scenario[j], cex.main = 0.75)
-  }
-  dev.off()
-
-  png(paste0(dir, "RS_HOS.png"), height = 6, width = 6, units = "in", res = 400)
-  par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
-  for (j in 1:nrow(Option_name)) {
-    jj <- ind2[j]
-    plot_RS(SMSE_list[[jj]], var = "HOS", type = "abs",
-            name = c("Fed Fry", "Traditionals"), ylim = c(0, 4000))
-    title(Option_name$scenario[j], cex.main = 0.75)
-  }
-  dev.off()
-
-  png(paste0(dir, "RS_Rel.png"), height = 6, width = 6, units = "in", res = 400)
-  par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
-  for (j in 1:nrow(Option_name)) {
-    jj <- ind2[j]
-    plot_RS(SMSE_list[[jj]], var = "Smolt", type = "abs", name = c("Fed Fry", "Traditionals"),
-            ylab = "Hatchery releases")
-    title(Option_name$scenario[j], cex.main = 0.75)
-  }
-  dev.off()
-
-  png(paste0(dir, "RS_Esc.png"), height = 6, width = 6, units = "in", res = 400)
-  par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
-  for (j in 1:nrow(Option_name)) {
-    jj <- ind2[j]
-    plot_RS(SMSE_list[[jj]], var = "Esc", type = "abs", name = c("Fed Fry", "Traditionals"),
-            ylab = "HO Escapement",
-            ylim = c(0, 5000))
-    title(Option_name$scenario[j], cex.main = 0.75)
-  }
-  dev.off()
-
-  png(paste0(dir, "LHG_NOS.png"), height = 6, width = 6, units = "in", res = 400)
-  par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
-  for (j in 1:nrow(Option_name)) {
-    jj <- ind2[j]
-    plot_LHG(SMSE_list[[jj]], var = "NOS", type = "abs", name = c("Early Smalls", "Late Larges"),
-             ylab = "NOS",
-             ylim = c(0, 700))
-    title(Option_name$scenario[j], cex.main = 0.75)
-  }
-  dev.off()
-
-  png(paste0(dir, "LHG_Esc.png"), height = 6, width = 6, units = "in", res = 400)
-  par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
-  for (j in 1:nrow(Option_name)) {
-    jj <- ind2[j]
-    plot_LHG(SMSE_list[[jj]], var = "Esc", type = "abs", name = c("Early Smalls", "Late Larges"),
-             ylab = "NO Escapement",
-             ylim = c(0, 900))
-    title(Option_name$scenario[j], cex.main = 0.75)
-  }
-  dev.off()
-
-  png(paste0(dir, "LHG_Smolt.png"), height = 6, width = 6, units = "in", res = 400)
-  par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
-  for (j in 1:nrow(Option_name)) {
-    jj <- ind2[j]
-    plot_LHG(SMSE_list[[jj]], var = "Smolt", type = "abs", name = c("Early Smalls", "Late Larges"),
-             ylab = "NO outmigrating juveniles",
-             ylim = c(0, 4e5))
-    title(Option_name$scenario[j], cex.main = 0.75)
-  }
-  dev.off()
-
-}
+#for (i in 1:length(scenario_unique)) {
+#
+#  ind <- gr$Scenario == scenario_unique[i]
+#
+#  dir <- file.path("figures", "SMSE", paste0("Set", i, "_"))
+#
+#  #### Time series barplots (annual medians for by scenario for each management option)
+#  ind2 <- which(ind)
+#
+#  png(paste0(dir, "spawners_prop.png"), height = 6, width = 6, units = "in", res = 400)
+#  par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
+#  for (j in 1:nrow(Option_name)) {
+#    jj <- ind2[j]
+#    plot_spawners(SMSE_list[[jj]])
+#    box()
+#    title(Option_name$scenario[j], cex.main = 0.75)
+#  }
+#  dev.off()
+#
+#  png(paste0(dir, "spawners.png"), height = 6, width = 6, units = "in", res = 400)
+#  par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
+#  for (j in 1:nrow(Option_name)) {
+#    jj <- ind2[j]
+#    plot_spawners(SMSE_list[[jj]], prop = FALSE, ylim = c(0, 4000))
+#    box()
+#    title(Option_name$scenario[j], cex.main = 0.75)
+#  }
+#  dev.off()
+#
+#  png(paste0(dir, "p_brood.png"), height = 6, width = 6, units = "in", res = 400)
+#  par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
+#  for (j in 1:nrow(Option_name)) {
+#    jj <- ind2[j]
+#    plot_escapement(SMSE_list[[jj]], ylim = c(0, 1))
+#    box()
+#    title(Option_name$scenario[j], cex.main = 0.75)
+#  }
+#  dev.off()
+#
+#  png(paste0(dir, "pHOS_fitness.png"), height = 6, width = 6, units = "in", res = 400)
+#  par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
+#  for (j in 1:nrow(Option_name)) {
+#    jj <- ind2[j]
+#    plot_fitness(SMSE_list[[jj]], ylim = c(0, 1))
+#    title(Option_name$scenario[j], cex.main = 0.75)
+#  }
+#  dev.off()
+#
+#  png(paste0(dir, "RS_HOS.png"), height = 6, width = 6, units = "in", res = 400)
+#  par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
+#  for (j in 1:nrow(Option_name)) {
+#    jj <- ind2[j]
+#    plot_RS(SMSE_list[[jj]], var = "HOS", type = "abs",
+#            name = c("Fed Fry", "Traditionals"), ylim = c(0, 4000))
+#    title(Option_name$scenario[j], cex.main = 0.75)
+#  }
+#  dev.off()
+#
+#  png(paste0(dir, "RS_Rel.png"), height = 6, width = 6, units = "in", res = 400)
+#  par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
+#  for (j in 1:nrow(Option_name)) {
+#    jj <- ind2[j]
+#    plot_RS(SMSE_list[[jj]], var = "Smolt", type = "abs", name = c("Fed Fry", "Traditionals"),
+#            ylab = "Hatchery releases")
+#    title(Option_name$scenario[j], cex.main = 0.75)
+#  }
+#  dev.off()
+#
+#  png(paste0(dir, "RS_Esc.png"), height = 6, width = 6, units = "in", res = 400)
+#  par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
+#  for (j in 1:nrow(Option_name)) {
+#    jj <- ind2[j]
+#    plot_RS(SMSE_list[[jj]], var = "Esc", type = "abs", name = c("Fed Fry", "Traditionals"),
+#            ylab = "HO Escapement",
+#            ylim = c(0, 5000))
+#    title(Option_name$scenario[j], cex.main = 0.75)
+#  }
+#  dev.off()
+#
+#  png(paste0(dir, "LHG_NOS.png"), height = 6, width = 6, units = "in", res = 400)
+#  par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
+#  for (j in 1:nrow(Option_name)) {
+#    jj <- ind2[j]
+#    plot_LHG(SMSE_list[[jj]], var = "NOS", type = "abs", name = c("Early Smalls", "Late Larges"),
+#             ylab = "NOS",
+#             ylim = c(0, 700))
+#    title(Option_name$scenario[j], cex.main = 0.75)
+#  }
+#  dev.off()
+#
+#  png(paste0(dir, "LHG_Esc.png"), height = 6, width = 6, units = "in", res = 400)
+#  par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
+#  for (j in 1:nrow(Option_name)) {
+#    jj <- ind2[j]
+#    plot_LHG(SMSE_list[[jj]], var = "Esc", type = "abs", name = c("Early Smalls", "Late Larges"),
+#             ylab = "NO Escapement",
+#             ylim = c(0, 900))
+#    title(Option_name$scenario[j], cex.main = 0.75)
+#  }
+#  dev.off()
+#
+#  png(paste0(dir, "LHG_Smolt.png"), height = 6, width = 6, units = "in", res = 400)
+#  par(mfrow = c(3, 3), mar = c(5, 4, 1, 1))
+#  for (j in 1:nrow(Option_name)) {
+#    jj <- ind2[j]
+#    plot_LHG(SMSE_list[[jj]], var = "Smolt", type = "abs", name = c("Early Smalls", "Late Larges"),
+#             ylab = "NO outmigrating juveniles",
+#             ylim = c(0, 4e5))
+#    title(Option_name$scenario[j], cex.main = 0.75)
+#  }
+#  dev.off()
+#
+#}
 
 
 # Tables of performance metrics by freshwater survival
+pm_primary <- c("PNI", "Natural Spawners", "P_PNI50", "P_1300_NS", "IR_Catch")
+pm_ancillary <- c("IR_Return", "Brood", "Egg", "Releases",
+                  "pNOBeff", "pHOSeff", "pWILD", "P_250_NOS", "P_476_NOS", "P_250_NS", "P_476_NS")
+
 for (i in LETTERS[1:3]) {
 
   # Make figure of performance metrics (all simulations at end of projection) ----
@@ -341,24 +342,6 @@ for (i in LETTERS[1:3]) {
     scale_y_discrete(labels = font_fn, limits = rev) +
     geom_hline(yintercept = 3.5, linewidth = 1)
   ggsave(file.path("figures", "SMSE", paste0("performance_table_", i, ".png")), g, width = 7.5, height = 7)
-
-  # Short performance metrics
-  pm_short <- c("PNI", "Natural Spawners", "P_PNI50", "P_1300_NS", "IR_Catch")
-
-  d <- rbind(
-    val_sim %>% select(Option, Scenario, variable, median),
-    val_prob %>% select(Option, Scenario, variable, value) %>% rename(median = value)
-  ) %>%
-    filter(grepl(i, Scenario)) %>%
-    filter(variable %in% pm_short) %>%
-    mutate(variable = factor(variable, pm_short))
-
-  g <- plot_table(d, ncol = 1) +
-    #geom_vline(xintercept = length(pm_primary) + 0.5, linewidth = 1, linetype = 2) +
-    scale_y_discrete(labels = font_fn, limits = rev) +
-    geom_hline(yintercept = 3.5, linewidth = 1)
-  ggsave(file.path("figures", "SMSE", paste0("performance_table_", i, ".png")), g, width = 7.5, height = 7)
-
 }
 
 # Full performance table all scenarios
@@ -388,16 +371,14 @@ g <- ggpubr::ggarrange(plotlist = glist, ncol = 3, widths = c(3, 2, 2))
 ggsave("figures/SMSE/performance_table_full.png", g, width = 17, height = 8)
 
 # Short performance metrics
-pm_short <- c("PNI", "Natural Spawners", "P_PNI50", "P_1300_NS", "IR_Catch")
-
 glist <- lapply(LETTERS[1:3], function(i) {
   d <- rbind(
     val_sim %>% select(Option, Scenario, variable, median),
     val_prob %>% select(Option, Scenario, variable, value) %>% rename(median = value)
   ) %>%
     filter(grepl(i, Scenario)) %>%
-    filter(variable %in% pm_short) %>%
-    mutate(variable = factor(variable, pm_short))
+    filter(variable %in% pm_primary) %>%
+    mutate(variable = factor(variable, pm_primary))
 
   g <- plot_table(d, ncol = 1) +
     geom_vline(xintercept = c(2.5, 4.5), linewidth = 1, linetype = 2) +
