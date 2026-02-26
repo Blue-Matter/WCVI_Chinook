@@ -1,44 +1,50 @@
 # Results
 
 See [Powerpoint](
-https://docs.google.com/presentation/d/1WN1psDLrEdPYpBb7KLWSUh0Jw6ZX2HDJ?rtpof=true&usp=drive_fs) presentation, results as of October 31.
+https://docs.google.com/presentation/d/17gjZdGj7l0s94G3m_Iklbe6CF6hvUdZ-) presentation, results as of February 26, 2026.
 
-Results pertaining to trends in PNI and total spawners among management strategies are generally consistent across population scenarios (Figure \@ref(fig:pf)).
+The table of primary performance metrics, organized by management levers, is presented in Figure \@ref(fig:pf-primary).
+A full table with ancillary performance metrics is provided in Figure \@ref(fig:pf).
 
-The choice of pNOB target strongly influences PNI with higher PNI from higher pNOB (Figure \@ref(fig:dt-pni)).
-With pNOB target of 1, the median PNI can exceed 0.5 in all scenarios indicative of an "integrated-transition" biological designation defined by @withler2018 for enhanced populations. 
+Tradeoff figures which compare two outcomes on a set of axes across management scenarios can inform the decision-making space, i.e. identify important management levers that decisively determine outcomes over other levers. 
 
-Higher in-river exploitation rates leads to lower spawner numbers in the long-term with larger removals from the system.
-Higher in-river exploitation rates slightly increase PNI, but the effect is marginal to almost negligible.
+A panel of tradeoff figures comparing P_PNI_50 and P_1300_NS can identify scenarios where both the PNI and spawner objectives are likely to be met (if both performance metrics are greater than 50 percent).
+Such scenarios are found in the upper right corner of the tradeoff figure.
+The decision-making space, and the answers to the three management questions posed earlier, can be identified through Figure \@ref(fig:tradeoff1).
+An accompanying tradeoff figure showing median PNI and spawner abundances are shown in Figure \@ref(fig:tradeoff2).
 
-Increases in freshwater survival (comparing among scenarios A-C) or lower marine ER (comparing A and D) increases both spawner numbers and PNI. 
-With declining fecundity, there are fewer spawners due to reduced egg production with a marginal decrease in PNI, comparing scenario A and E.
-Changes in PNI are frequently more marginal in scenarios D and E because the differences in survival and fecundity impact NOS and HOS equally.
+First, freshwater stewardship, i.e., increasing freshwater survival, makes it more likely to achieve PNI and spawner objectives.
+When viewing the column of panels from left to right (corresponding to higher survival), the various modeling scenarios indicated in the coloured points shift to the upper right corner.
 
-Selection of a management strategy that meets objectives, e.g., maximize spawners and PNI, can be facilitated by comparing management choices in a tradeoff figure (Figure \@ref(fig:dt-tradeoff)). 
-The strategy that maximizes both objectives are in the top right corner for each scenario. None of the evaluated strategies are clearly optimal for maximizing both spawners and PNI in all scenarios. 
-In such a case, it is helpful to first prioritize either objective, high PNI or high spawners, to filter the management strategies that perform well for the primary objective. 
-The management strategy among the filtered choices that performs best for the secondary objective can then be chosen.
-For example, if maximizing spawners is the primary objective, then an in-river exploitation rate of 0.5 should be used, with three candidate pNOB targets to choose from.
-Maximizing PNI, the secondary objective, is always achieved with pNOB of 1 in all scenarios.
+Second, comparison of results in the top half (top 2 rows) with the bottom half of Figure \@ref(fig:tradeoff1) informs the importance of mass marking to achieve the PNI objective.
+In the top 2 rows, almost all modeling scenarios provided P_PNI50 scores of less than 50 percent, indicating PNI > 0.5 was unlikely to occur without mass marking except in the most optimistic case (no in-river fishery, high freshwater survival, and mark-selective terminal fishery).
+Within the bottom 2 rows, coloured points indicate the pNOB target in the modeled projections and describes the impact of selective brood. The PNI objective is frequently achieved only with the high pNOB target (compare blue points vs. red points) with low to medium freshwater survival. Notably, the increase in pNOB target (and PNI50 probability) does come at a cost of slightly reducing the probability of obtaining 1300 spawners.
 
-(ref:fig-pf) Table of performance measures reporting outcomes at the end of the projection for 9 management options (1-9, rows), with primary metrics left of the dashed vertical black line. Each panel represents outcomes by scenario (A-E). Each column is colour-coded with magenta representing zero, green the maximium value of each metric, and white representing half of the maximum. Total spawners, Brood, ESSR catch, and escapement are in units of abundance (> 0), mean age is in units of years (between 2--5), egg production is in millions, hatchery releases in hundreds of thousands, and all others are proportions/probabilities between 0--1. Table cells report medians for all metrics the probability-based metrics (prefixed with P_). Medians are calculated across 100 stochastic simulations, and may not be directly comparable across columns.
+Third, the comparison of the first to second row and the third to fourth row facilitates evaluation of mark-selective marine terminal fishing. While mark-selective fishing improves the performance metrics, the impacts are more marginal compared to other management levers. The quadrants of modeling scenarios do not switch quadrants depending on whether fishing is mark-selective or not.
+Similarly, the modeling scenarios frequently do not move between quadrants based on in-river exploitation rate (pNOB target is the more impactful lever where the results do change quadrants). As a result, the presence of the in-river fishery does not conflict with PNI and spawner objectives.
 
-```{r pf, out.width="6in", fig.cap="(ref:fig-pf)"}
+In general, the spawner objective was achieved in most scenarios in the simulations. Notably, the spawner objective was not met under the following conditions: low freshwater survival, high pNOB target (with massing marking) and non-selective terminal fishery. This combinations results in low spawner abundance (regardless of in-river exploitation) due to low survival of natural-origin fish, which in turn reduces brood availability for hatchery production.
+
+(ref:fig-pf-primary) Panel of primary performance measures reporting outcomes at the end of the projection for various modeling scenarios and management options. Primary performance metrics directly identify ability to reach pre-stated decision-making objectives. Columns of panels differentiate freshwater survival (fs) while rows identify presence (MM) or absence (no MM) of mass-marking, and presence (MSF_T) or absence (no MSF_T) of mark-selective fishing in the terminal fishery. Within each table, cell rows identify in-river management option (in-river exploitation rate, IRER) and pNOB target, and cell columns identify the primary performance metric.
+
+```{r pf-primary, fig.asp=get_asp(here::here("figures/SMSE/performance_table_short.png")), fig.cap="(ref:fig-pf-primary)"}
+knitr::include_graphics(here::here("figures/SMSE/performance_table_short.png"))
+```
+
+(ref:fig-pf) Panel of primary and ancillary performance measures reporting outcomes at the end of the projection for various modeling scenarios and management options. The layout of the panels is described in the caption of Figure \@ref(fig:pf-primary).
+
+```{r pf, fig.width=6, fig.asp=get_asp(here::here("figures/SMSE/performance_table_full.png")), fig.cap="(ref:fig-pf)"}
 knitr::include_graphics(here::here("figures/SMSE/performance_table_full.png"))
 ```
 
-
-```{r dt-pni, fig.cap="Decision tables of the median PNI across the grid of management options for in-river exploitation rate (ER) and hatchery pNOB targets across four scenarios (A-E). Within each table, colours correspond to the value of median PNI where magenta corresponds to zero, white corresponds to 0.5, and green corresponds to one."}
-knitr::include_graphics(here::here("figures/SMSE/decisiontable_PNI.png"))
-```
-
-```{r dt-sp, fig.cap="Decision tables of the median total spawners across the grid of management options for in-river exploitation rate (ER) and hatchery pNOB targets across four scenarios (A-E). Within each table, colours correspond to the value of median spawners where darker cells correspond to larger numbers."}
-knitr::include_graphics(here::here("figures/SMSE/decisiontable_sp.png"))
-```
-
-```{r dt-tradeoff, fig.cap="Tradeoff table that reports the median PNI (y-axis) and total spawners (x-axis) by in-river exploitation rate (points) and pNOB target (colours). Lines denote the 95% range of outcomes in the simulations."}
+```{r tradeoff1, fig.asp=get_asp(here::here("figures/SMSE/tradeoff_PNI_sp.png")), fig.cap="Tradeoff table that reports P_PNI_50 (y-axis) and P_1300_NS (x-axis) across the various modeling scenarios. Columns of panels differentiate freshwater survival (fs) while rows identify presence (MM) or absence (no MM) of mass-marking, and presence (MSF_T) or absence (no MSF_T) of mark-selective fishing in the terminal fishery. Within each panel, shapes identify in-river management option (in-river exploitation rate, IRER) and colours identify pNOB target."}
 knitr::include_graphics(here::here("figures/SMSE/tradeoff_PNI_sp.png"))
+```
+
+(ref:fig-tradeoff2) Tradeoff table that reports P_PNI_50 (y-axis) and P_1300_NS (x-axis) across the various modeling scenarios. The layout of the panels is described in the caption of Figure \@ref(fig:tradeoff1).
+
+```{r tradeoff2, fig.asp=get_asp(here::here("figures/SMSE/tradeoff_PNI_sp.png")), fig.cap="(ref:fig-tradeoff2)"}
+knitr::include_graphics(here::here("figures/SMSE/tradeoff_prob.png"))
 ```
 
 # Discussion

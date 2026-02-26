@@ -1,13 +1,6 @@
-<!-- The following code should appear at the beginning of the first appendix.
-(if you have one)
-After that, all subsequent sections will be turned into appendices. -->
+\newpage
 
-`r if(knitr:::is_latex_output()) '% begin csasdown appendix'`
-`r if(!knitr:::is_latex_output()) '# (APPENDIX) Appendix {-}'`
-
-\clearpage
-
-# ROBERTSON CWT EXPLOITATION RATE MODEL (ERM) {#app:sarita-cwt}
+# APPENDIX `r new_appendix()`: ROBERTSON CWT EXPLOITATION RATE MODEL (ERM) {#app:sarita-cwt}
 
 Typical run reconstruction uses a historical time series of spawner and recruit data to estimate the productivity of salmon populations. Escapement time series may be available but catch may not be identifiable for a population of interest, for example, if the population is a conservation unit, as part of a larger stock complex and catch composition is not identified to individual CUs.
 
@@ -52,7 +45,7 @@ knitr::include_graphics(here::here("figures/Sarita_ex_PT_CTC_pesc0.75.png"))
 knitr::include_graphics(here::here("figures/Sarita_ex_T_CTC_pesc0.75.png"))
 ```
 
-# QUINSAM CWT EXPLOITATION RATE MODEL (ERM) {#app:quinsam-cwt}
+# APPENDIX `r new_appendix()`: QUINSAM CWT EXPLOITATION RATE MODEL (ERM) {#app:quinsam-cwt}
 
 Quinsam CWT provided an alternative dataset from which to estimate differences in maturity by release strategy. Brood year maturity was estimated for traditionals and for each age, a constant offset parameter was estimated to arrive at the maturity for fed fry.
 
